@@ -102,7 +102,7 @@ This task is test-eligible under `TEST_POLICY=<RESOLVED_TEST_POLICY>` (reason: <
 - End with: `FINDINGS: <count>` (count blocking findings only; advisories do not count)
 ```
 
-The script passes a review only when the reply's first decisive line (the first line that is either an `LGTM` verdict or a numbered finding) is `LGTM`, so `LGTM` followed by `ADVISORY:` lines still passes — this is the **non-blocking channel** that keeps `preferred` from collapsing into `required`. Anything in the numbered list blocks. Keep that contract.
+The script passes a review only when (1) the reviewer runner exits 0 and (2) the reply's first decisive line — after stripping markdown decoration, the first line that starts with `LGTM` (any case) or with a number followed by `.` or `)` — is `LGTM` alone or `LGTM` followed by a separator (`.`, `!`, `:`, `;`, `,`, `(`, `-`) and anything. So `LGTM`, `LGTM.`, `**LGTM**`, `LGTM (no changes)`, `LGTM: nit` pass, and `LGTM` followed by `ADVISORY:` lines still passes — this is the **non-blocking channel** that keeps `preferred` from collapsing into `required`. `LGTM must not be granted`, `LGTM? Not yet.`, an empty reply, or a numbered finding before the verdict fail. Anything in the numbered list blocks. Keep that contract.
 
 ## 3. build_fix_prompt(issue, title, body, findings_a, findings_b, round, outfile)
 

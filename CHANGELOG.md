@@ -10,21 +10,44 @@ heading and bump the contract version stated in that file.
 ## [Unreleased]
 
 ### Fixed
-- `references/auto-develop-template.md`: three runtime defects inherited unchanged from
+- `references/auto-develop-template.md`: runtime defects inherited unchanged from
   `governance-to-automation` 1.2.2. They share one cause: bash suspends `set -e` inside a function
-  called from an `&& ... ||` list, which the template relied on.
+  called from an `&& ... ||` list (and never inherits it into `$(...)`), which the template relied
+  on. Every critical step of `process_issue` now carries an explicit guard:
   - A failed checkpoint commit, final amend, push, or PR creation fell through to "Done" and was
     counted as a completed issue; a failed checkpoint additionally let the refactor revert land on
-    the base tip and discard the approved correctness work. Each step now carries an explicit guard
-    that logs, keeps the committed issue branch where one exists, returns to the base branch, and
-    fails the issue.
+    the base tip and discard the approved correctness work. The checkpoint guard logs git's own
+    reason, saves the approved diff to `$logdir/approved-uncommitted.patch`, then discards; the
+    memory step, the final amend, the push, and the PR keep the committed issue branch, drop only
+    leftovers, return to the base branch, and fail the issue.
   - `run_review` accepted any line starting with `LGTM` anywhere in the reviewer output and ignored
     the runner's exit status, so a rejection such as "1. HIGH ..." followed by "LGTM must not be
-    granted" passed. It now requires a successful runner and decides on the first decisive line (the
-    first `LGTM` verdict or numbered finding), which also tolerates CLI preamble.
-  - `check_dependencies` treated an unreadable issue body (failed `gh` call) as "no dependencies" and
-    let the task through. It now fails closed and reports the task as blocked.
+    granted" passed. It now requires a runner exit status of 0, writes the runner's stderr to a
+    `.stderr` sidecar instead of merging it, and decides on the first decisive line: after stripping
+    markdown decoration, the first line that is `LGTM` or a numbered finding must be `LGTM` alone or
+    `LGTM` followed by a separator (`. ! : ; , ( -`). Reviewer runners must therefore emit only the
+    model's final message on stdout (`claude -p --output-format text` does; `codex exec` needs
+    `--output-last-message <file>` or `--json`); see the runner contract in the template.
+  - A crashed reviewer or fix runner was indistinguishable from "nothing left to fix": the no-op fix
+    cycle then accepted the open findings and the issue shipped unreviewed. A crashed reviewer is
+    retried once after 15 s and then fails the issue; a crashed fix runner fails the issue.
+  - The issue-branch checkout ran inside a `$(...)`, so a failed checkout was swallowed and the run
+    continued (and committed) on the base branch. `create_issue_branch` now takes the branch name,
+    only checks out, and is guarded; a leftover branch without own commits is recreated from the
+    current base tip, one with commits is reused with a warning.
+  - The `gh` reads of title, body, and labels in `process_issue` were unguarded and ran the whole
+    pipeline with empty values; they now fail the issue before any git mutation.
+  - A failed refactor fold (`git commit --amend`) left the round uncommitted for a later revert to
+    drop while the counters still reported it; the round is now reverted before the counters move.
+  - `check_dependencies` treated an unreadable issue body (failed `gh` call) as "no dependencies"
+    and let the task through, and its parser captured only the first `#N` of a `Depends on` line. It
+    now fails closed when the body or a dependency's state cannot be read and parses every `#N` on
+    the line (`Depends on #12, #13`, `Depends on: #12`), which makes multi-dependency lines comply
+    with contract rule M5.
 - `references/prompt-builders.md`: the description of the pass rule matches the new check.
+- `references/automate.md`, `references/audit.md`: the failure-path wording distinguishes
+  pre-checkpoint (discard) from post-checkpoint (keep the committed branch) rollbacks, and the audit
+  safety list flags critical steps that rely on `set -e` instead of explicit guards.
 
 The fixture `examples/auto-develop.payload-sample.sh` is a pre-refactor snapshot and is intentionally
 not re-synced; it still shows the origin behaviour. The contract (`references/contract.md`) is

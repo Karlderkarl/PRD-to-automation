@@ -287,7 +287,7 @@ stage_repo_changes() { git add -A; git reset -q -- "$LOGDIR" >/dev/null 2>&1 || 
 # either block the checkout or get carried onto the base branch, tripping the next run's
 # clean-worktree guard. Before the correctness checkpoint commit HEAD is still at the base
 # tip, so `reset --hard` only drops uncommitted work; callers after the checkpoint (failed
-# amend/push/PR) keep the committed issue branch and only drop leftovers. `clean` excludes
+# memory step/amend/push/PR) keep the committed issue branch and only drop leftovers. `clean` excludes
 # $LOGDIR explicitly so this issue's freshly written FAILURE logs survive for debugging even
 # if the operator never gitignored logs/ (don't rely on the gitignore for that).
 return_to_base() {
@@ -298,6 +298,11 @@ return_to_base() {
 # --- Model runners: generate these from the Step 3 confirmed model/CLI mapping.
 # Example only: Sonnet/Opus may route through `claude -p`, Codex through `codex exec`.
 # Do not assume those defaults; write the runner functions to match the user's selection.
+# REVIEWER runners must emit ONLY the model's final message on stdout and must NOT `2>&1`:
+# run_review scans stdout for the verdict and keeps stderr in a sidecar. `claude -p
+# --output-format text` already prints just the final message; `codex exec` prints a header,
+# the echoed prompt and reasoning summaries, so use `--output-last-message <file>` and `cat`
+# that file (or `--json` plus jq) — otherwise any numbered line in that noise reads as a finding.
 run_impl_model() {      # <prompt_file>
   {{IMPL_RUNNER_CALL}}
 }
@@ -318,24 +323,31 @@ issue_has_label() {  # <n>
   [[ "$(gh issue view "$1" --json labels \
     --jq '[.labels[].name]|map(select(.=="{{TASK_LABEL}}"))|length')" -gt 0 ]]; }
 check_dependencies() {  # <n> -> non-zero if any "Depends on #N" is still open OR unverifiable
-  local body deps
+  local body deps d state
   # Fail CLOSED: the call site runs this inside `|| { ...; continue; }`, where bash suspends
   # `set -e`, so a failed `gh` call must be checked explicitly. Otherwise an unreadable body
   # silently means "no dependencies" and the Depends-on gate is bypassed.
   body="$(gh issue view "$1" --json body --jq '.body')"     || { log "Cannot read #$1 (gh failed); treating it as blocked."; return 1; }
-  deps="$(echo "$body" | grep -oiE 'depends on #[0-9]+' | grep -oE '[0-9]+' || true)"
+  # Every #N on a "Depends on" line counts ("Depends on #12, #13", "Depends on: #12") — contract M5.
+  deps="$(echo "$body" | grep -oiE 'depends on[^[:cntrl:]]*' | grep -oE '#[0-9]+' | tr -d '#' || true)"
   for d in $deps; do
-    [[ "$(gh issue view "$d" --json state --jq '.state')" != "CLOSED" ]] && \
-      { log "Blocked by #$d"; return 1; }; done; return 0; }
+    state="$(gh issue view "$d" --json state --jq '.state')"     || { log "Cannot read #$d (gh failed); treating it as blocked."; return 1; }
+    [[ "$state" != "CLOSED" ]] && { log "Blocked by #$d"; return 1; }; done; return 0; }
 
 # Branch the issue from BASE_BRANCH (never from the current HEAD) so successive issues in a
 # --max-issues > 1 run never stack on an earlier, still-unmerged issue branch — otherwise
-# issue N's review diff would include issue N-1's code.
-create_issue_branch() {  # <n> <title>
-  local b="issue-$1-$(slugify "$2")"
-  if git show-ref --verify --quiet "refs/heads/$b"; then git checkout "$b"
-  else git checkout -b "$b" "$BASE_BRANCH"; fi
-  echo "$b"; }
+# issue N's review diff would include issue N-1's code. Takes the branch NAME and only checks
+# out (no echo): a `$(...)` wrapper would swallow a failed checkout and the run would go on
+# committing to the base branch. A leftover branch with no own commits (earlier failed
+# checkpoint) is recreated from the CURRENT base tip; one that already carries commits
+# (earlier failed push/PR) is reused and reported.
+create_issue_branch() {  # <branch>
+  local b="$1" own
+  if ! git show-ref --verify --quiet "refs/heads/$b"; then git checkout -b "$b" "$BASE_BRANCH"
+  elif git merge-base --is-ancestor "$b" "$BASE_BRANCH"; then git checkout -B "$b" "$BASE_BRANCH"
+  else own="$(git rev-list --count "$BASE_BRANCH".."$b")"
+       log "WARN: reusing branch $b, which already has $own own commit(s) ahead of $BASE_BRANCH."
+       git checkout "$b"; fi; }
 
 # --- Checks: run each command in CHECKS[] in order; auto-fix once on failure.
 #     Stack-agnostic: no package.json/runtime guard — the commands ARE the toolchain.
@@ -622,16 +634,20 @@ code_hash() { stage_for_diff; git diff --cached "$BASE_BRANCH" -- . ":!$MEMORY_F
 
 # --- Review: uses code_diff (full uncommitted work vs {{BASE_BRANCH}} — new files
 #     included, MEMORY.md excluded) so status churn is hidden but real changes are not ---
-run_review() {  # <label> <runner_fn> <issue> <title> <body> <logfile> <logdir>
-  local diff; diff="$(code_diff 2>/dev/null || true)"
+run_review() {  # <label> <runner_fn> <issue> <title> <body> <logfile> <logdir> -> 0 pass, 1 findings, 2 runner failed
+  local diff verdict re; diff="$(code_diff 2>/dev/null || true)"
   [[ -z "$diff" ]] && { echo "LGTM (no changes)" > "$6"; return 0; }
   build_review_prompt "$1" "$3" "$4" "$5" "$diff" "$7/prompt-review.txt"
-  "$2" "$7/prompt-review.txt" > "$6" 2>&1     || { echo "REVIEWER FAILED: runner exited non-zero; not a pass." >> "$6"; return 1; }
-  # Pass only when the FIRST decisive line is LGTM. Runner output may carry CLI preamble
-  # (stderr is merged), so skip to the first line that is either an LGTM verdict or a
-  # numbered finding ("1." / "1)"). A rejection whose later prose starts with "LGTM"
-  # (e.g. "LGTM must not be granted") therefore no longer counts as approval.
-  grep -m1 -iE '^(LGTM|[0-9]+[.)])' "$6" | grep -qi '^LGTM'; }   # LGTM = pass
+  # stdout = the model's final message ONLY (runner contract above); stderr goes to a sidecar so
+  # CLI progress/preamble never reaches the verdict scan. A crashed runner is rc 2, not a rejection.
+  "$2" "$7/prompt-review.txt" > "$6" 2> "$6.stderr"     || { echo "REVIEWER FAILED: runner exited non-zero; not a pass." >> "$6"; return 2; }
+  # Verdict = the FIRST decisive line (LGTM or a numbered finding "1." / "1)") after stripping
+  # markdown decoration. Pass only as LGTM alone or LGTM + a separator (. ! : ; , ( -): "LGTM",
+  # "**LGTM**", "LGTM (no changes)", "LGTM - nit" pass; "LGTM must not be granted", "LGTM? Not yet."
+  # and findings-first replies fail.
+  verdict="$(grep -m1 -iE '^[[:space:]>*_`#-]*(LGTM|[0-9]+[.)])' "$6" | sed -E 's/^[[:space:]>*_`#-]+//; s/[[:space:]*_`]+$//' || true)"
+  re='^[Ll][Gg][Tt][Mm]([[:space:]]*[.!:;,(-].*)?$'
+  [[ "$verdict" =~ $re ]]; }   # LGTM = pass
 
 # --- Review-until-pass: A/B review + fix loop with no-op detection.
 #     Reused for BOTH the correctness pass and the refactor re-validation.
@@ -639,25 +655,39 @@ run_review() {  # <label> <runner_fn> <issue> <title> <body> <logfile> <logdir>
 #       clean         = both reviewers passed
 #       accepted-noop = reviewers had findings but a fix cycle changed no code
 #                       (tolerated by the correctness pass to avoid infinite loops)
-#       failed        = rounds exhausted or a check failed
+#       failed        = rounds exhausted, a check failed, or a reviewer/fix runner crashed
 #     Returns 0 for clean OR accepted-noop, 1 for failed. Callers that must NOT
 #     tolerate unresolved findings (the refactor pass) check REVIEW_OUTCOME == clean,
 #     not just the exit code. ---
+# One reviewer call with a single retry on RUNNER failure (rc 2 = the CLI crashed, e.g. rate
+# limit — not a rejection). Returns 0 pass, 1 findings, 2 failed twice.
+run_review_retry() {  # same args as run_review
+  local rc=0; run_review "$@" || rc=$?
+  [[ "$rc" -eq 2 ]] || return "$rc"
+  log "WARN: $1 runner failed; retrying once in 15s."; sleep 15
+  rc=0; run_review "$@" || rc=$?
+  [[ "$rc" -eq 2 ]] && log "ERROR: $1 runner failed twice; failing the issue."
+  return "$rc"; }
 review_until_pass() {  # <issue> <title> <body> <logdir> <stage>
   local issue="$1" title="$2" body="$3" logdir="$4" stage="$5" round=1
   REVIEW_ROUNDS=0; REVIEW_OUTCOME=failed
   while [[ "$round" -le "$MAX_ROUNDS" ]]; do
     REVIEW_ROUNDS="$round"
-    local a="$logdir/$stage-rev-a-r$round.log" b="$logdir/$stage-rev-b-r$round.log" ap=true bp=true
-    run_review "$REVIEW_A_LABEL" run_review_a_model "$issue" "$title" "$body" "$a" "$logdir" || ap=false
-    # Omit the next line for single-review projects:
-    run_review "$REVIEW_B_LABEL" run_review_b_model "$issue" "$title" "$body" "$b" "$logdir" || bp=false
+    local a="$logdir/$stage-rev-a-r$round.log" b="$logdir/$stage-rev-b-r$round.log" ap=true bp=true rc=0
+    # A crashed reviewer (rc 2) FAILS the issue: it must never turn into a fix round whose no-op
+    # is then accepted as "remaining findings" (that would ship unreviewed code).
+    run_review_retry "$REVIEW_A_LABEL" run_review_a_model "$issue" "$title" "$body" "$a" "$logdir" || rc=$?
+    [[ "$rc" -eq 2 ]] && { REVIEW_OUTCOME=failed; return 1; }; [[ "$rc" -eq 0 ]] || ap=false
+    # Omit the next two lines for single-review projects:
+    rc=0; run_review_retry "$REVIEW_B_LABEL" run_review_b_model "$issue" "$title" "$body" "$b" "$logdir" || rc=$?
+    [[ "$rc" -eq 2 ]] && { REVIEW_OUTCOME=failed; return 1; }; [[ "$rc" -eq 0 ]] || bp=false
     [[ "$ap" == true && "$bp" == true ]] && { REVIEW_OUTCOME=clean; return 0; }
     [[ "$round" -ge "$MAX_ROUNDS" ]] && { REVIEW_OUTCOME=failed; return 1; }
     local before after
     before="$(code_hash)"
     build_fix_prompt "$issue" "$title" "$body" "$a" "$b" "$round" "$logdir/$stage-fix-r$round.txt"
-    run_impl_model "$logdir/$stage-fix-r$round.txt" > "$logdir/$stage-fix-r$round.log" 2>&1
+    # A crashed fixer is not a deliberate no-op: fail instead of accepting the open findings.
+    run_impl_model "$logdir/$stage-fix-r$round.txt" > "$logdir/$stage-fix-r$round.log" 2>&1     || { log "ERROR: fix runner failed (round $round)"; REVIEW_OUTCOME=failed; return 1; }
     after="$(code_hash)"
     [[ "$before" == "$after" ]] && {
       log "No code change in fix cycle; remaining findings accepted."; REVIEW_OUTCOME=accepted-noop; return 0; }
@@ -698,11 +728,13 @@ refactor_stage() {  # <issue> <title> <body> <logdir>
       git clean -fd -e "$LOGDIR" >/dev/null 2>&1   # drop files the bad round added; keep this issue's logs
       return 0
     fi
-    # Accepted: fold this cleanly-reviewed refactor into the checkpoint commit.
+    # Accepted: fold this cleanly-reviewed refactor into the checkpoint commit. Guarded: a failed
+    # fold would leave the round uncommitted for a later revert to drop while the counters still
+    # reported it, so revert it now and stop; the counters are bumped only after the fold.
+    stage_repo_changes
+    git commit --amend --no-edit >/dev/null     || { log "WARN: could not fold refactor round $r into the checkpoint; reverting it and stopping."; git reset --hard HEAD >/dev/null 2>&1; git clean -fd -e "$LOGDIR" >/dev/null 2>&1; return 0; }
     DELIVERED_REVIEW_ROUNDS=$((DELIVERED_REVIEW_ROUNDS + REVIEW_ROUNDS))
     REFACTOR_ROUNDS="$r"
-    stage_repo_changes
-    git commit --amend --no-edit >/dev/null
     r=$((r + 1))
   done
   log "Reached MAX_REFACTOR_ROUNDS ($MAX_REFACTOR_ROUNDS); accepting current state."
@@ -711,11 +743,19 @@ refactor_stage() {  # <issue> <title> <body> <logdir>
 # --- Per-issue pipeline ---
 process_issue() {  # <issue>
   require_clean_worktree || return 1
-  local issue="$1" title body logdir branch
-  title="$(gh issue view "$issue" --json title --jq '.title')"
-  body="$(gh issue view "$issue" --json body --jq '.body')"
+  local issue="$1" title body labels logdir branch out
+  # All gh reads are guarded and happen BEFORE any git mutation, so a plain `return 1` is safe
+  # here (an unreadable issue must not run the pipeline with an empty title/body/labels).
+  title="$(gh issue view "$issue" --json title --jq '.title')"     || { log "ERROR: cannot read #$issue (gh failed)"; return 1; }
+  body="$(gh issue view "$issue" --json body --jq '.body')"        || { log "ERROR: cannot read #$issue (gh failed)"; return 1; }
+  # Newline-join so multi-word labels ("good first issue") stay one token (see resolve_skill).
+  labels="$(gh issue view "$issue" --json labels --jq '[.labels[].name]|join("\n")')"     || { log "ERROR: cannot read #$issue (gh failed)"; return 1; }
   logdir="$(ensure_logdir "$issue")"
-  branch="$(create_issue_branch "$issue" "$title")"; log "Branch: $branch"
+  # Check out OUTSIDE a `$(...)`: a substitution would swallow a failed checkout and the run
+  # would continue — and commit — on the base branch.
+  branch="issue-$issue-$(slugify "$title")"
+  create_issue_branch "$branch" || { log "ERROR: cannot check out $branch"; return 1; }
+  log "Branch: $branch"
   TARGETED_TEST_FILE="$logdir/targeted-test.txt"
   rm -f "$TARGETED_TEST_FILE"
   FROZEN_TARGETED_TEST_TARGET=""
@@ -725,9 +765,6 @@ process_issue() {  # <issue>
   #    Globals RESOLVED_SKILL / RESOLVED_SKILL_REASON are then injected by the
   #    implement/fix/refactor prompt builders. Issue mode matches on labels; the local
   #    task-list variant (no labels) relies on title: matchers against the task title.
-  local labels
-  # Newline-join so multi-word labels ("good first issue") stay one token (see resolve_skill).
-  labels="$(gh issue view "$issue" --json labels --jq '[.labels[].name]|join("\n")')"
   resolve_skill "$labels" "$title" "$body" "$logdir"
   resolve_test_policy "$labels" "$title" "$body" "$logdir"
 
@@ -786,8 +823,9 @@ process_issue() {  # <issue>
   # Explicit guard: process_issue runs inside `&& ... ||` at the call site, where bash suspends
   # `set -e` for the whole function body. Without it a failed checkpoint (hook, signing,
   # identity) would let refactor_stage `reset --hard HEAD` onto the BASE tip and discard the
-  # approved correctness work.
-  git commit -m "feat: implement #$issue - $title (correctness)" >/dev/null     || { log "ERROR: checkpoint commit failed for #$issue; discarding and skipping."; return_to_base; return 1; }
+  # approved correctness work. git's own reason is logged (it goes to stdout for "nothing to
+  # commit"), and the approved diff is saved under $LOGDIR (survives return_to_base) first.
+  out="$(git commit -m "feat: implement #$issue - $title (correctness)" 2>&1)"     || { log "ERROR: checkpoint commit failed for #$issue: ${out//$'\n'/ | }"; git diff --cached "$BASE_BRANCH" -- . ":!$MEMORY_FILE" > "$logdir/approved-uncommitted.patch"; log "Approved diff saved to $logdir/approved-uncommitted.patch; discarding and skipping."; return_to_base; return 1; }
 
   # 3b. Refactor stage: simplify to senior quality on top of the checkpoint, re-validated
   #     by A/B. Reverts any round that is not cleanly approved; never fails the issue.
@@ -799,7 +837,9 @@ process_issue() {  # <issue>
   #     they mean different things. "Last fix" is gated on fix rounds (review_rounds),
   #     the simplification note on refactor rounds. Do not conflate them into one number.
   build_memory_update_prompt "$issue" "$title" "$review_rounds" "$REFACTOR_ROUNDS" "$logdir/prompt-mem.txt"
-  run_impl_model "$logdir/prompt-mem.txt" > "$logdir/07-mem.log" 2>&1
+  # Guarded: a crashed memory step would otherwise ship a PR with a stale $MEMORY_FILE and no
+  # archive entry (contract M3) without a trace.
+  run_impl_model "$logdir/prompt-mem.txt" > "$logdir/07-mem.log" 2>&1     || { log "ERROR: memory step failed for #$issue; checkpoint kept on $branch."; return_to_base; return 1; }
 
   # 5. Fold memory + the final message into the ONE issue commit, then PR.
   #     (merge ONLY if user opted in — otherwise stop here for human review)
@@ -847,10 +887,13 @@ fi
 COMPLETED=0
 for issue in "${CANDIDATES[@]}"; do
   [[ "$COMPLETED" -ge "$MAX_ISSUES" ]] && break
-  check_dependencies "$issue" || { log "Skip #$issue (deps open)."; continue; }
+  check_dependencies "$issue" || { log "Skip #$issue (deps open or unverifiable)."; continue; }
   if [[ "$DRY_RUN" == true ]]; then log "[dry-run] would process #$issue"; COMPLETED=$((COMPLETED+1)); continue; fi
-  # NOTE: inside this `&& ... ||` list bash suspends `set -e` for the whole process_issue body,
-  # so every critical step in process_issue carries its own `|| { ...; return 1; }` guard.
+  # NOTE: inside this `&& ... ||` list bash suspends `set -e` for the whole process_issue body
+  # (and everything it calls). The guarded steps are: the gh issue reads, the branch checkout,
+  # the impl/test/fix/memory runners, the reviewer runners (rc 2 + one retry), the checkpoint
+  # commit, the refactor fold, the final amend, the push and the PR — each with its own
+  # `|| { log ...; return 1; }` (plus return_to_base where work must be dropped).
   process_issue "$issue" && COMPLETED=$((COMPLETED+1)) || log "#$issue produced no changes/failed."
 done
 log "Done. Completed $COMPLETED issue(s)."
@@ -859,8 +902,8 @@ log "Done. Completed $COMPLETED issue(s)."
 ## Generation rules
 
 - **Keep the guards.** `require_clean_worktree`, dependency blocking, and the `return_to_base` rollback on failure are what make the loop safe to re-run. The rollback must **discard** in-progress work (`git reset --hard` + `git clean -fd -e "$LOGDIR"`, which keeps this issue's freshly written failure logs) before switching back, never a bare `git checkout "$orig"` — a half-written impl/fix would otherwise block the checkout or follow onto the base branch and trip the next run's clean-worktree guard.
-- **Keep the explicit failure guards.** Bash suspends `set -e` inside `process_issue` and `check_dependencies` because the main loop calls them from `&& ... ||` lists. The checkpoint commit, the final amend, `git push`, and `gh pr create` therefore each carry an explicit `|| { log ...; return_to_base; return 1; }`, `check_dependencies` fails closed when `gh` cannot read the issue, and `run_review` requires a successful runner plus an `LGTM` on the first decisive line. Do not generate a script that relies on `set -e` for these steps.
-- **Branch from the base branch, and return to it after every issue.** `create_issue_branch` must start each new issue from `{{BASE_BRANCH}}` (`git checkout -b "$b" "$BASE_BRANCH"`), and the success path must `git checkout "$BASE_BRANCH"` after opening the PR. Otherwise, in a `--max-issues > 1` run, issue N branches off issue N-1's still-unmerged tip and its review diff includes the previous issue's code.
+- **Keep the explicit failure guards.** Bash suspends `set -e` inside `process_issue` and `check_dependencies` because the main loop calls them from `&& ... ||` lists, and never inherits it into `$(...)`. Every critical step therefore carries its own guard: the `gh` issue reads (title/body/labels, before any git mutation), the branch checkout (`create_issue_branch "$branch" || ...`, never inside a `$(...)`), the impl/test/fix/memory runners, the reviewer runners (`run_review` returns 2 on a crashed runner; `run_review_retry` retries once after 15 s, then the issue fails — a crash must never become a fix round whose no-op is accepted), the checkpoint commit (logs git's reason, saves the approved diff to `$logdir/approved-uncommitted.patch`, then discards), the refactor fold (`git commit --amend` reverts the round on failure, before the counters are bumped), the final amend, `git push`, and `gh pr create` (these keep the committed issue branch and drop only leftovers). `check_dependencies` fails closed when `gh` cannot read the issue or a dependency, and parses every `#N` on a `Depends on` line. Do not generate a script that relies on `set -e` for these steps.
+- **Branch from the base branch, and return to it after every issue.** `create_issue_branch <branch>` must start each new issue from `{{BASE_BRANCH}}` (`git checkout -b "$b" "$BASE_BRANCH"`), recreate a leftover branch that has no own commits with `git checkout -B "$b" "$BASE_BRANCH"` (a branch left at an old base tip by a failed checkpoint must not carry a stale base), and reuse a branch that already has commits (earlier failed push/PR) with a WARN naming their count. It only checks out and returns the checkout status; the caller computes the name and guards the call. The success path must `git checkout "$BASE_BRANCH"` after opening the PR. Otherwise, in a `--max-issues > 1` run, issue N branches off issue N-1's still-unmerged tip and its review diff includes the previous issue's code.
 - **Gate the correctness commit on a non-empty CODE diff**, not on `has_repo_changes_outside_logs`. `run_review` auto-approves an empty `code_diff`, so a model that only rewrote the `{{MEMORY_FILE}}` "Next Up" line would otherwise pass review and produce a memory-only "implemented" commit + PR. Use `[[ -n "$(code_diff)" ]]` (excludes `{{MEMORY_FILE}}`/logs) as the checkpoint guard — no code change means nothing was built.
 - **Review/no-op diffs must include new files.** Build every review diff and no-op hash from a *staged* diff (`stage_for_diff` + `git diff --cached <base>`), never plain `git diff <base>` — the latter omits untracked files, so a brand-new implementation file would be reviewed as an empty diff and silently approved. Use the `code_diff` / `code_hash` helpers everywhere a code diff is needed.
 - **Stage with `git add -A` + unstage `$LOGDIR`, not `git add -- . :(exclude)$LOGDIR`.** When the log dir is gitignored (the recommended setup), the `:(exclude)` pathspec makes `git add` exit 1 on the matched-but-ignored path, which kills the run under `set -e`. Plain `git add -A` skips ignored paths silently; follow with `git reset -q -- "$LOGDIR"` to keep logs out of commits when they are *not* ignored.
@@ -872,6 +915,7 @@ log "Done. Completed $COMPLETED issue(s)."
 - **Refactor stage is gated, bounded, and never silently degrades.** It runs only after correctness passes, only when `REFACTOR=true`, and stops when a round changes nothing (`code_hash` no-op = converged) or `MAX_REFACTOR_ROUNDS` is reached. A round is **kept only when its re-review is `clean`** — failing checks, failing review, or a no-op fix cycle with findings still open (`REVIEW_OUTCOME != clean`) reverts that round. It is behavior-preserving simplification only — never a place to add features. `--no-refactor` must cleanly skip it.
 - **Report the real history, with the right semantics.** The commit message reports the delivered A/B rounds (`DELIVERED_REVIEW_ROUNDS`: correctness plus accepted refactor re-reviews, not discarded refactor attempts) and `REFACTOR_ROUNDS`. The memory archive gets the correctness **fix** rounds (`review_rounds`) and `REFACTOR_ROUNDS` as *separate* arguments — never a conflated total — because "last fix" and "refactor rounds" are different facts; passing delivered review rounds into the "last fix" slot would imply fixes that never happened. `MEMORY.md` is part of the governance contract, so this accuracy is mandatory.
 - **Pipe prompts via stdin** in the generated runner functions to avoid "Argument list too long" on large diffs.
+- **Reviewer runners emit only the final message.** `run_review` scans the runner's stdout for the verdict and writes stderr to `<logfile>.stderr`; a reviewer runner must therefore print nothing but the model's final message on stdout and must not `2>&1`. `claude -p --output-format text` already does; `codex exec` prints a header, the echoed prompt and reasoning summaries, so run it with `--output-last-message <file>` and `cat` that file (or `--json` and extract the last agent message with jq). Any numbered line in such noise would otherwise read as the first finding and fail every review. The pass rule: the first decisive line (after stripping markdown decoration, the first line that is `LGTM` or a numbered finding) must be `LGTM` alone or `LGTM` followed by a separator (`. ! : ; , ( -`); a runner exit status other than 0 is never a pass.
 - **Stdlib only** — bash + `git` + `gh` plus only the model CLIs the user explicitly selected. No extra deps unless governance lists them. In particular, hash code diffs with `git hash-object --stdin` (git is already required), **not** `md5sum`/`md5` — those are absent by default on macOS/Windows and would make the script die under `set -euo pipefail`.
 - **Privileged flags off by default, behind a runtime confirmation.** Generated scripts must ship safe defaults (`CLAUDE_PERMISSION_MODE="default"`, `CODEX_SANDBOX_MODE="workspace-write"`, `AUTO_MERGE=false`) and reach privileged modes only via the `--unattended` / `--auto-merge` flags. Do **not** hardcode `bypassPermissions` / `danger-full-access` / an unconditional `gh pr merge` as defaults — that is what static scanners (Socket/Snyk) flag and what `automate.md` Step 3 forbids without explicit opt-in. Keep `confirm_privileged_mode` and its call before `launch_in_tmux_if_requested`: it lists the requested privileges and prompts `[y/N]`, is skipped by `--dry-run` and `--yes`, and **refuses** (rather than blocks) when no TTY is attached and `--yes` was not given. The tmux re-exec must propagate `--unattended`/`--auto-merge` and append `--yes`, so the human confirms once in the foreground and the detached child does not re-prompt. A sandboxed reviewer CLI (e.g. `codex exec`) takes its `--sandbox` from `$CODEX_SANDBOX_MODE`, never a literal.
 - **Detached runs should be first-class** — keep the `--tmux-session` / `--tmux-log` path working so long unattended batches can be launched safely without rewriting the script wrapper.

@@ -66,6 +66,7 @@ Check the script's safety and invariants as well, and report deviations as **Cri
 - privileged values (`bypassPermissions`, `danger-full-access`, an unconditional merge) appear as defaults instead of behind `--unattended` / `--auto-merge` and `confirm_privileged_mode`
 - `eval` is used on project commands or on the `{TARGET}` value, or the `{TARGET}` allowlist sanitisation is missing
 - the checkpoint commit is not gated on a non-empty code diff; failure paths use a bare `git checkout` instead of discarding work and returning to the base branch
+- critical steps (issue reads, checkout, checkpoint, amend, push, PR, reviewer/fixer/memory runners) rely on `set -e` inside `process_issue` instead of explicit guards
 - `FROZEN_TARGETED_TEST_TARGET`, `TARGETED_TEST_FILE`, `TEST_GATE_ACTIVE` are not reset per task
 - the refactor pass runs before the correctness checkpoint, or keeps a round whose re-review was not clean
 
