@@ -3,6 +3,7 @@
 **Status:** Entwurf
 **Datum:** 2026-09-22
 **Zielgruppe:** Der Mensch, der das neue Repo aufsetzt; der govern-Modus des Skills selbst (diese PRD ist die Eingabe für die Governance des neuen Repos); menschliche Reviewer.
+**Name:** entschieden am 2026-09-22: Repo `Karlderkarl/PRD-to-automation`, Skill `prd-to-automation` (Abschnitt 6). `governance-pipeline` im Text ist der ursprüngliche Vorschlag.
 
 ---
 
@@ -163,6 +164,7 @@ Diese Regeln stammen aus den Ursprungsskills und sind Critical. Der Nachweis ste
 - **R29** Die Version beginnt bei 1.0.0. Der erste CHANGELOG-Eintrag nennt die Ursprungsversionen (`prd-to-governance` 1.2.0, `governance-to-automation` 1.2.2) und ordnet jeden Ursprungsteil seinem neuen Ort zu.
 - **R30** Die Beispiele aus `governance-to-automation` werden als Fixtures übernommen. Sie sind Beispielausgaben, nicht das Build-System des Repos, und werden nie ausgeführt. Der Hinweis dazu steht in `CLAUDE.md` und im README.
 - **R31** Prüfungen des Repos: Skill-Validierung des Frontmatters, `bash -n` und `shellcheck` auf das Beispielskript. Kein weiterer Toolchain. Der exakte Befehl für die Skill-Validierung ist `[NEEDS CODEBASE DISCOVERY]` (das Tooling, mit dem 1.0.1 von `prd-to-governance` validiert wurde, ist im CHANGELOG nicht benannt).
+  - **Ermittelt am 2026-09-22:** `quick_validate.py` aus Anthropics `skill-creator`-Skill; seine erlaubten Frontmatter-Schlüssel sind genau die der CHANGELOG-Regel von 1.0.1.
 - **R32** Die beiden alten Repos bekommen ein README-Banner "superseded by Karlderkarl/governance-pipeline" mit dem neuen Installationsbefehl. Ihre Skills bleiben unter den alten Namen installierbar und werden nicht mehr weiterentwickelt. Archivierung siehe offene Entscheidungen.
 - **R33** `agents/openai.yaml` wird für den neuen Namen aktualisiert (Anzeigename, Kurzbeschreibung, Default-Prompt), damit Codex den Skill weiter implizit aufrufen kann.
 
@@ -188,7 +190,7 @@ Phasen 3 bis 5 sind voneinander unabhängig, sobald Phase 2 steht.
 
 ## 6. Offene Entscheidungen
 
-- `[USER DECISION REQUIRED]` Name von Repo und Skill. Vorschlag `governance-pipeline`, parallel zu `pi-governance-pipeline`. Der gleiche Skill-Name wie bei pi ist unkritisch, weil beide nie im selben Harness installiert sind.
+- **Entschieden** Name von Repo und Skill. Vorschlag `governance-pipeline`, parallel zu `pi-governance-pipeline`. Der gleiche Skill-Name wie bei pi ist unkritisch, weil beide nie im selben Harness installiert sind.
   - **Entschieden am 2026-09-22:** Repo `Karlderkarl/PRD-to-automation`, Skill `prd-to-automation`. Alle Nennungen von `governance-pipeline` in dieser PRD sind der ursprüngliche Vorschlag; der Name bleibt dem pi-Schwesterprojekt vorbehalten.
 - `[USER DECISION REQUIRED]` Archivierung der alten Repos: sofort nach v1.0.0 oder erst nach einer Übergangsfrist mit Banner.
 - `[USER DECISION REQUIRED]` Historie der alten Repos importieren (`git subtree`) oder nur der Herkunftsvermerk im CHANGELOG. Vorschlag: nur der Vermerk, die Historie bleibt in den archivierten Repos erhalten.
