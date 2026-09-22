@@ -6,7 +6,7 @@
       "title": "Governance",
       "description": "Bootstrap project governance from a PRD, turn that governance into automation, and audit both for drift.",
       "skills": [
-        "governance-pipeline"
+        "prd-to-automation"
       ]
     }
   ]

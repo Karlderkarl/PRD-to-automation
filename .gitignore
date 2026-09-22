@@ -2,3 +2,4 @@
 *.skill
 *.zip
 skills-lock.json
+publish/

@@ -2,7 +2,7 @@
 
 Release blocker: every rule below must have a location. A rule with no location cannot ship.
 
-Sources: `prd-to-governance` 1.2.0 `SKILL.md` "Quality Checklist" (P1 to P15), `governance-to-automation` 1.2.2 `SKILL.md` "Quality checklist" (A1 to A26), and the Critical invariants of PRD section 4.4 (R14 to R27). Paths are relative to `skills/governance-pipeline/`, except `SECURITY.md` and `examples/`, which sit at the repository root.
+Sources: `prd-to-governance` 1.2.0 `SKILL.md` "Quality Checklist" (P1 to P15), `governance-to-automation` 1.2.2 `SKILL.md` "Quality checklist" (A1 to A26), and the Critical invariants of PRD section 4.4 (R14 to R27). Paths are relative to `skills/prd-to-automation/`, except `SECURITY.md` and `examples/`, which sit at the repository root.
 
 ## prd-to-governance 1.2.0, Quality Checklist
 

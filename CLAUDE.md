@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repository is
 
-A **Claude Code skill-authoring repository**. It contains no application; its "source" is the **`governance-pipeline`** skill (Markdown plus one example shell script): a single skill with three modes that takes *other* projects from a PRD to governance files (govern), from governance to a generated `auto-develop.sh` (automate), and audits both for drift (audit).
+A **Claude Code skill-authoring repository**. It contains no application; its "source" is the **`prd-to-automation`** skill (Markdown plus one example shell script): a single skill with three modes that takes *other* projects from a PRD to governance files (govern), from governance to a generated `auto-develop.sh` (automate), and audits both for drift (audit).
 
 ```
 Idea/PRD ─▶ govern ─▶ SOUL.md / AGENTS.md / CLAUDE.md / MEMORY.md ─▶ automate ─▶ auto-develop.sh
@@ -12,12 +12,12 @@ Idea/PRD ─▶ govern ─▶ SOUL.md / AGENTS.md / CLAUDE.md / MEMORY.md ─▶
                                         ▲ audit reads all of it, writes nothing ▲
 ```
 
-The skill merged `prd-to-governance` 1.2.0 (now govern) and `governance-to-automation` 1.2.2 (now automate) with **unchanged behaviour**. Those names appear in the skill only as provenance. `docs/PRD.md` (German) is the PRD this repository was built from; `docs/parity.md` proves every origin rule has a home.
+The skill merged `prd-to-governance` 1.2.0 (now govern) and `governance-to-automation` 1.2.2 (now automate) with **unchanged behaviour**. Those names appear in the skill only as provenance. The PRD proposed the name `governance-pipeline`; repo and skill were named `PRD-to-automation` / `prd-to-automation` on 2026-09-22 (PRD section 6). `docs/PRD.md` (German) is the PRD this repository was built from; `docs/parity.md` proves every origin rule has a home.
 
 ## Skill anatomy
 
 ```
-skills/governance-pipeline/
+skills/prd-to-automation/
   SKILL.md              short entry point: project root, mode table, mode selection, boundaries (target under 150 lines, hard limit 200)
   references/
     contract.md         THE shared contract, versioned; markers, priorities, memory rules, Skill Policy, test discipline, field table
@@ -62,8 +62,8 @@ There is no build, lint, or test toolchain. The only checks:
 ```bash
 bash -n examples/auto-develop.payload-sample.sh                      # syntax-check the fixture
 shellcheck examples/auto-develop.payload-sample.sh                   # lint it (clean as of 1.0.0)
-python <skill-creator>/scripts/quick_validate.py skills/governance-pipeline   # frontmatter validation
-wc -l skills/governance-pipeline/SKILL.md                            # must stay at or below 200 lines
+python <skill-creator>/scripts/quick_validate.py skills/prd-to-automation   # frontmatter validation
+wc -l skills/prd-to-automation/SKILL.md                            # must stay at or below 200 lines
 rg -n 'prd-to-governance|governance-to-automation' skills/           # only provenance mentions allowed
 rg -n 'bypassPermissions|danger-full-access|--squash' skills/ examples/   # only behind --unattended / --auto-merge, never a default
 ```
@@ -73,4 +73,5 @@ The frontmatter validator is the `quick_validate.py` script shipped with Anthrop
 ## Caveats
 
 - The root `AGENTS.md` describes this repo's own contributor guidelines. It is *not* a governance file produced by the govern mode; do not treat it as pipeline input. There is no `SOUL.md` or `MEMORY.md` here, so do not add `@SOUL.md` / `@MEMORY.md` references.
-- Publishing steps (GitHub repo creation, tags, the "superseded" banner in the two origin repos, archiving) are outward-facing and need the user's explicit go-ahead.
+- Publishing steps (GitHub repo creation, tags, the "superseded" banner in the two origin repos, archiving) are outward-facing and need the user's explicit go-ahead. `publish/` (gitignored) holds `publish.sh` plus the banner patches for the origin repos; the user runs it as the GitHub account `Karlderkarl`, since a Claude Code session may neither create public repos nor merge PRs.
+- The branch `fix/pipeline-runtime-guards` holds three runtime fixes for `references/auto-develop-template.md` (explicit failure guards, reviewer verdict parsing, fail-closed dependency check). It is kept off 1.0.0 on purpose because PRD R8 requires unchanged behaviour; intended for 1.0.1.

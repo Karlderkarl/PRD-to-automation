@@ -1,7 +1,7 @@
 <!--
   EXAMPLE / SAMPLE — not this repository's task list.
   A worked instance of the local task-list source (Option B) from
-  skills/governance-pipeline/references/task-list-template.md,
+  skills/prd-to-automation/references/task-list-template.md,
   for a Node/pnpm + Payload CMS project. Kept as a format fixture only.
   `status:` values shown all done to illustrate a completed pass.
 -->

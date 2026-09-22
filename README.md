@@ -1,4 +1,4 @@
-# governance-pipeline
+# PRD-to-automation
 
 A Claude Code skill that takes a project from idea to autonomous delivery in three modes:
 
@@ -13,7 +13,7 @@ The two stages share one contract (`references/contract.md`): uncertainty marker
 ## Install
 
 ```bash
-npx skills add Karlderkarl/governance-pipeline
+npx skills add Karlderkarl/PRD-to-automation
 ```
 
 Requires [Claude Code](https://claude.ai/code).
@@ -23,9 +23,9 @@ Requires [Claude Code](https://claude.ai/code).
 Claude Code auto-selects the skill when you ask it to create or refresh governance from a PRD, to generate or sync an auto-develop pipeline, or to audit either. You can also name the mode:
 
 ```
-/governance-pipeline govern docs/PRD.md
-/governance-pipeline automate
-/governance-pipeline audit
+/prd-to-automation govern docs/PRD.md
+/prd-to-automation automate
+/prd-to-automation audit
 ```
 
 Without a named mode, the skill picks one from the situation (PRD but no governance → govern; governance but no script → automate; "check", "drift", "dry-run" → audit) and states its choice in one line before working.
@@ -34,12 +34,12 @@ Without a named mode, the skill picks one from the situation (PRD but no governa
 
 1. **govern** reads the PRD, inspects the repository, interviews you on roles, git conventions, task source, and commands, then proposes the four files. Nothing is written before you approve per file.
 2. **automate** extracts checks, roles, conventions, and memory rules from the governance, asks you to choose the model for every pipeline step, wires exactly one task source, and generates `auto-develop.sh`. It validates the script but never runs the real loop.
-3. **Dry run** it yourself: `./auto-develop.sh --dry-run` (or `/governance-pipeline audit`) confirms task selection without executing models. Then `./auto-develop.sh --max-issues 1`.
+3. **Dry run** it yourself: `./auto-develop.sh --dry-run` (or `/prd-to-automation audit`) confirms task selection without executing models. Then `./auto-develop.sh --max-issues 1`.
 
 ## Repository layout
 
 ```
-skills/governance-pipeline/
+skills/prd-to-automation/
   SKILL.md                         entry point: ground rules, mode selection, boundaries
   references/
     contract.md                    the shared contract (versioned)
@@ -64,7 +64,7 @@ docs/parity.md                     every rule of the origin skills and where it 
 
 [`pi-governance-pipeline`](https://github.com/Karlderkarl/pi-governance-pipeline) is the sister project for the [pi](https://github.com/badlogic/pi-mono) harness. Same mode model (govern, automate, audit), different mechanics, on purpose:
 
-| Aspect | governance-pipeline (Claude Code) | pi-governance-pipeline (pi) |
+| Aspect | PRD-to-automation (Claude Code) | pi-governance-pipeline (pi) |
 |---|---|---|
 | Pipeline | a Bash script generated per project | a versioned Node engine, wrapper in the project |
 | Harness file | `CLAUDE.md` | `SYSTEM.md` and `.pi/APPEND_SYSTEM.md` |
@@ -76,7 +76,7 @@ Neither replaces the other; pick the one for your harness.
 
 ## Origin
 
-This skill merges two earlier Claude Code skills without changing their behaviour: [`prd-to-governance`](https://github.com/Karlderkarl/prd-to-governance) 1.2.0 became the govern mode and [`governance-to-automation`](https://github.com/Karlderkarl/governance-to-automation) 1.2.2 became the automate mode; their audit parts became the audit mode. Projects generated with those versions keep working unchanged. `docs/parity.md` maps every rule of both quality checklists to its new location.
+This skill merges two earlier Claude Code skills without changing their behaviour: [`prd-to-governance`](https://github.com/Karlderkarl/prd-to-governance) 1.2.0 became the govern mode and [`governance-to-automation`](https://github.com/Karlderkarl/governance-to-automation) 1.2.2 became the automate mode; their audit parts became the audit mode. Projects generated with those versions keep working unchanged. `docs/parity.md` maps every rule of both quality checklists to its new location. The PRD (`docs/PRD.md`) proposed the name `governance-pipeline`; repo and skill are named `PRD-to-automation` / `prd-to-automation` since 2026-09-22, leaving that name to the pi sister project.
 
 ## Security
 

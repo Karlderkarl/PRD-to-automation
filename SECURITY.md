@@ -3,7 +3,7 @@
 ## Reporting a vulnerability
 
 Please report security issues **privately** via GitHub's
-[Private vulnerability reporting](https://github.com/Karlderkarl/governance-pipeline/security/advisories/new)
+[Private vulnerability reporting](https://github.com/Karlderkarl/PRD-to-automation/security/advisories/new)
 (repository **Security** tab, *Report a vulnerability*). Do **not** open a public issue for a
 security report.
 

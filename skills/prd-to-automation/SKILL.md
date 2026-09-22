@@ -1,12 +1,12 @@
 ---
-name: governance-pipeline
+name: prd-to-automation
 description: "Turn a PRD into project governance (SOUL.md, AGENTS.md, CLAUDE.md, MEMORY.md), turn that governance into a project-tailored, stack-agnostic auto-develop pipeline script, and audit both for drift. Use when bootstrapping or refreshing governance from a PRD, generating or syncing an auto-develop.sh from existing governance, or checking governance and pipeline drift, including dry-running a generated script. Do not trigger merely because a repository contains an AGENTS.md; the user must ask for governance, automation, or an audit of them."
 license: MIT
 metadata:
   version: 1.0.0
 ---
 
-# Governance Pipeline
+# PRD to Automation
 
 One skill, three modes. It takes a project from a PRD to governance files, from governance to a generated `auto-develop.sh` pipeline, and audits both for drift. Each mode preserves the behaviour of its origin: **govern** is `prd-to-governance` 1.2.0, **automate** is `governance-to-automation` 1.2.2, **audit** joins the read-only audit parts of both. Those names appear in this skill only as provenance; never install or invoke them.
 
@@ -26,7 +26,7 @@ Load only the references the chosen mode needs. The templates and blueprints in 
 
 ### Mode selection
 
-Invocation: `/governance-pipeline <mode> [arguments]`, for example `/governance-pipeline govern docs/PRD.md`, `/governance-pipeline automate`, or `/governance-pipeline audit`. The mode and its arguments come from the request text. Without an explicit mode:
+Invocation: `/prd-to-automation <mode> [arguments]`, for example `/prd-to-automation govern docs/PRD.md`, `/prd-to-automation automate`, or `/prd-to-automation audit`. The mode and its arguments come from the request text. Without an explicit mode:
 
 | Situation | Mode |
 |---|---|

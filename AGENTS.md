@@ -1,8 +1,8 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-This is a Claude Code **skill-authoring** repository, not an application. It ships **one skill**, `governance-pipeline`, with three modes: govern (PRD to `SOUL.md` / `AGENTS.md` / `CLAUDE.md` / `MEMORY.md`), automate (governance to a generated, stack-agnostic `auto-develop.sh`), and audit (read-only drift report and validation).
-- `skills/governance-pipeline/SKILL.md` is the short entry point (mode selection, boundaries); `references/` holds the shared contract (`contract.md`), the three mode workflows (`govern.md`, `automate.md`, `audit.md`), and the blueprints they load on demand.
+This is a Claude Code **skill-authoring** repository, not an application. It ships **one skill**, `prd-to-automation`, with three modes: govern (PRD to `SOUL.md` / `AGENTS.md` / `CLAUDE.md` / `MEMORY.md`), automate (governance to a generated, stack-agnostic `auto-develop.sh`), and audit (read-only drift report and validation).
+- `skills/prd-to-automation/SKILL.md` is the short entry point (mode selection, boundaries); `references/` holds the shared contract (`contract.md`), the three mode workflows (`govern.md`, `automate.md`, `audit.md`), and the blueprints they load on demand.
 - `examples/` holds **sample outputs** (`auto-develop.payload-sample.sh`, `refact-todo.md`) generated for a Node/pnpm + Payload CMS project: read-only fixtures, not this repository's build system. The sample script must not be run here.
 - `docs/PRD.md` is the PRD this repo implements (German); `docs/parity.md` maps every origin rule to its new location. `CLAUDE.md` holds the architecture and the contract invariants; read it first.
 
@@ -10,8 +10,8 @@ This is a Claude Code **skill-authoring** repository, not an application. It shi
 There is no application toolchain (Markdown plus one example Bash script). The meaningful checks:
 - `bash -n examples/auto-develop.payload-sample.sh` syntax-checks the fixture
 - `shellcheck examples/auto-develop.payload-sample.sh` lints it
-- `python <skill-creator>/scripts/quick_validate.py skills/governance-pipeline` validates the frontmatter
-- `wc -l skills/governance-pipeline/SKILL.md` must stay at or below 200
+- `python <skill-creator>/scripts/quick_validate.py skills/prd-to-automation` validates the frontmatter
+- `wc -l skills/prd-to-automation/SKILL.md` must stay at or below 200
 
 When the automate mode generates a script, validate it the same way (`bash -n`, `shellcheck`, then `--dry-run`) before running. Generation must never execute the real loop.
 

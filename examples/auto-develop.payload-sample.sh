@@ -5,7 +5,7 @@
 # ============================================================================
 #  This is a *generated* auto-develop.sh, produced by the automate mode
 #  (at the time: the `governance-to-automation` skill, now the automate mode
-#  of `governance-pipeline`) for a specific Node/pnpm + Payload CMS project.
+#  of `prd-to-automation`) for a specific Node/pnpm + Payload CMS project.
 #  It is kept only as a concrete fixture showing what fully-resolved
 #  skill output looks like (real runner functions, model resolution, etc.).
 #
@@ -13,7 +13,7 @@
 #  second, refactor pass (review_until_pass + refactor_stage, --no-refactor /
 #  --max-refactor-rounds). This fixture is intentionally NOT re-synced; for the
 #  current pipeline shape see
-#  skills/governance-pipeline/references/auto-develop-template.md.
+#  skills/prd-to-automation/references/auto-develop-template.md.
 #
 #  It is project-specific (hardcoded `master` base branch and pnpm PATH).
 #
@@ -26,7 +26,7 @@
 #                      which has no TTY); the tmux re-exec adds it automatically
 #                      after the human confirms once in the foreground.
 #  See ../CLAUDE.md and the template at
-#  skills/governance-pipeline/references/auto-develop-template.md.
+#  skills/prd-to-automation/references/auto-develop-template.md.
 #
 #  Treat this file as read-only reference. Do not execute it in this repo.
 # ============================================================================

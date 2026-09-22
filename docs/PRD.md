@@ -189,6 +189,7 @@ Phasen 3 bis 5 sind voneinander unabhängig, sobald Phase 2 steht.
 ## 6. Offene Entscheidungen
 
 - `[USER DECISION REQUIRED]` Name von Repo und Skill. Vorschlag `governance-pipeline`, parallel zu `pi-governance-pipeline`. Der gleiche Skill-Name wie bei pi ist unkritisch, weil beide nie im selben Harness installiert sind.
+  - **Entschieden am 2026-09-22:** Repo `Karlderkarl/PRD-to-automation`, Skill `prd-to-automation`. Alle Nennungen von `governance-pipeline` in dieser PRD sind der ursprüngliche Vorschlag; der Name bleibt dem pi-Schwesterprojekt vorbehalten.
 - `[USER DECISION REQUIRED]` Archivierung der alten Repos: sofort nach v1.0.0 oder erst nach einer Übergangsfrist mit Banner.
 - `[USER DECISION REQUIRED]` Historie der alten Repos importieren (`git subtree`) oder nur der Herkunftsvermerk im CHANGELOG. Vorschlag: nur der Vermerk, die Historie bleibt in den archivierten Repos erhalten.
 - `[USER DECISION REQUIRED]` Veröffentlichung auf skills.sh unter dem neuen Namen. Annahme: ja.

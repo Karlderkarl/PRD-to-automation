@@ -4,14 +4,14 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Changes to `skills/governance-pipeline/references/contract.md` are listed under a **Contract**
+Changes to `skills/prd-to-automation/references/contract.md` are listed under a **Contract**
 heading and bump the contract version stated in that file.
 
 ## [Unreleased]
 
 ## [1.0.0] - 2026-09-22
 
-First release of the **governance-pipeline** skill: one Claude Code skill with the modes govern,
+First release of the **prd-to-automation** skill: one Claude Code skill with the modes govern,
 automate, and audit. It merges two earlier skills with **unchanged behaviour**:
 
 | Origin | Version | Now |
@@ -25,7 +25,7 @@ generated with `governance-to-automation` 1.2.2 keep working without change; an 
 drift merely because of the skill change.
 
 ### Added
-- `skills/governance-pipeline/SKILL.md`: short entry point with the project-root rule, the mode
+- `skills/prd-to-automation/SKILL.md`: short entry point with the project-root rule, the mode
   table, the mode-selection rules, the boundaries, and the references each mode loads. Frontmatter
   uses only `name`, `description`, `license`, `metadata.version`.
 - `references/audit.md`: read-only mode that combines the governance drift report, the script drift
@@ -81,10 +81,13 @@ drift merely because of the skill change.
   the templates for this repository's files of the same name.
 
 ### Changed
+- Repo and skill are named `PRD-to-automation` / `prd-to-automation`, decided on 2026-09-22 (PRD section 6).
+  The PRD proposed `governance-pipeline`; that name stays with the pi sister project
+  `pi-governance-pipeline`.
 - Every cross-skill reference ("route back to `prd-to-governance`", "recommend
   `governance-to-automation`", "separate skill") is now a mode switch ("switch to the govern mode",
   "switch to the automate mode"). The origin names appear in the skill only as provenance.
 - The skill frontmatter carries `license: MIT` and `metadata.version` (the
   `governance-to-automation` frontmatter had neither).
 
-[1.0.0]: https://github.com/Karlderkarl/governance-pipeline/releases/tag/v1.0.0
+[1.0.0]: https://github.com/Karlderkarl/PRD-to-automation/releases/tag/v1.0.0
