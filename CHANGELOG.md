@@ -9,6 +9,23 @@ heading and bump the contract version stated in that file.
 
 ## [Unreleased]
 
+### Contract
+- Contract version 1.0.1: volatile facts (generated automation, task source, implemented phases,
+  blockers) live only in `MEMORY.md` *Current State*; AGENTS.md *Current Reality* and CLAUDE.md
+  *Current Project State* stay durable and point there. New field-table row: the AGENTS.md
+  *Auto-Develop Policy* must declare the pipeline's rollback exception when *Prohibited Actions*
+  forbid `git reset --hard` / `git clean`; a missing declaration is `[GOVERNANCE DRIFT]`.
+
+### Changed
+- `references/agents-template.md`, `references/claude-template.md`: the *Prohibited Actions* example
+  names the pipeline's rollback as the sole exception, the *Auto-Develop Policy* example declares it,
+  and the *Current Reality* / *Current Project State* placeholders point to MEMORY.md for volatile
+  facts. A behaviour test of 1.0.0 produced a project whose AGENTS.md forbade what its generated
+  script does on failure, and whose status sentences were stale right after the automate run.
+- `references/govern.md`, `references/automate.md`, `references/audit.md`: govern names both rules
+  when writing AGENTS.md/CLAUDE.md; automate checks the prohibition against the rollback in Step 1
+  and reports stale status sentences after writing (Step 7); audit has two matching targets.
+
 ### Fixed
 - `references/auto-develop-template.md`: runtime defects inherited unchanged from
   `governance-to-automation` 1.2.2. They share one cause: bash suspends `set -e` inside a function

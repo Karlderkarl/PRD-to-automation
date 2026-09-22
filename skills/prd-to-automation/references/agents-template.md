@@ -35,6 +35,7 @@ Stay inside the project root.
 {Honest snapshot of what exists RIGHT NOW, not aspirational state.}
 - {e.g., The repo is still pre-implementation. No application source tree yet.}
 - {e.g., Do not assume `src/`, `public/`, or `tests/` already exist.}
+- {Durable facts only. Whether automation, the task source, or a phase exists RIGHT NOW is volatile and lives in MEMORY.md Current State; write "see MEMORY.md" instead of "does not exist yet".}
 
 ## Intended Project Structure
 
@@ -88,8 +89,8 @@ Minimum review checklist:
 
 ### Git
 - No `git push --force` to shared branches.
-- No `git reset --hard` unless the user explicitly asks for it.
-- No `git clean -fd` unless the user explicitly asks for it.
+- No `git reset --hard` unless the user explicitly asks for it (sole exception: the automated pipeline discarding its own uncommitted task work on a failed step, see Auto-Develop Policy).
+- No `git clean -fd` unless the user explicitly asks for it (same exception).
 - Do not amend pushed commits.
 
 ### System
@@ -137,6 +138,7 @@ When the project uses an automated issue-processing pipeline, add this section t
 - Blocked issues are skipped silently; they do not cause the script to fail.
 - Implementation agents write ONE status line to MEMORY.md "Next Up" (overwrite, not append). The pipeline writes the final "Completed Work" entry after review passes.
 - If a fix cycle produces no code changes (only MEMORY.md/logs), remaining findings are treated as accepted deviations and the loop breaks.
+- Rollback exception: on a failed step the pipeline discards its own uncommitted work of the current task (`git reset --hard` + `git clean -fd`, keeping `logs/`) and returns to the base branch. This is the only permitted destructive git action; it never touches committed work, other branches, or the base branch.
 
 ### Test discipline
 
@@ -151,6 +153,7 @@ Omit all of the following to keep the pipeline's test gate `off` — that is the
 ```
 
 Key patterns this section codifies:
+- **Rollback exception**: the pipeline's discard of its own uncommitted task work is declared here, so *Prohibited Actions* and the generated script do not contradict each other
 - **MEMORY.md exclusion from diffs**: Prevents context overflow when status lines grow across fix cycles
 - **Status line discipline**: One line in "Next Up", overwritten not appended, prevents MEMORY.md bloat
 - **No-op fix detection**: Breaks infinite review loops when the implementation agent agrees with deviations
@@ -184,7 +187,7 @@ Key patterns this section codifies:
 
 - Target ~100-150 lines. Longer means agents skip sections.
 - Prohibited actions must be specific - "be careful" is not enforceable, "do not write secrets into tracked files" is.
-- The Current Reality section prevents agents from assuming things exist that don't.
+- The Current Reality section prevents agents from assuming things exist that don't. Keep it to durable facts and point to MEMORY.md *Current State* for anything that changes soon (generated automation, task source, implemented phases); a sentence like "auto-develop.sh does not exist yet" is stale the moment the automate mode runs, and that mode may not edit this file.
 - If you have automation (CI/CD, auto-develop scripts), add an "Auto-Develop Policy" section using the example above.
 - If the project uses the automate mode's pipeline, AGENTS.md is the producing side of two optional contracts it consumes: the **Skill Policy** section (seeds `SKILL_MAP`) and the **Test discipline** fields inside Auto-Develop Policy (`TEST_POLICY` / `TEST_ELIGIBILITY`, paired with CLAUDE.md `TARGETED_TEST_CMD`). Both are fail-safe: leave them out and the pipeline runs unchanged. Add them only when the behaviour is actually wanted, and keep matchers in the exact `<type>:<pattern>=<value>` form shown above so the pipeline can parse them.
 - Review rules should be genuinely useful. If the project is solo/small, a single review pass or even "user reviews" is fine.

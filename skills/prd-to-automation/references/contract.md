@@ -1,6 +1,6 @@
 # The governance-to-pipeline contract
 
-**Contract version: 1.0.0.** Any change to this file is a contract change and is recorded as such in `CHANGELOG.md`.
+**Contract version: 1.0.1.** Any change to this file is a contract change and is recorded as such in `CHANGELOG.md`.
 
 This file defines once what the **govern** mode writes, the **automate** mode reads, and the **audit** mode checks. The mode references (`references/govern.md`, `references/automate.md`, `references/audit.md`) and the blueprints link here for the definitions; wherever a mode reference restates a rule for readability, this file is the authoritative wording. The contract is exactly what `prd-to-governance` 1.2.0 produced and `governance-to-automation` 1.2.2 consumed; consolidating it here changed no behaviour.
 
@@ -37,6 +37,7 @@ Layout that govern produces (blueprints: `references/memory-template.md`, `refer
 
 - `MEMORY.md` is the living state: Current State, Completed Work (archive reference only), Key Decisions, Key Implementation Notes, Next Up, Content Sources, Infrastructure, Governance Drift, Update Rules. Start at 40 to 60 lines.
 - `memory/completed-phases.md` is the archive for completed-work details, created by default and organised with `### Phase Name` subheadings. It must not be gitignored; if `memory/` holds daily flush files, ignore them with a precise pattern such as `memory/2026-*.md`.
+- Volatile facts (what exists right now: generated automation, the task source, implemented phases, current blockers) live only in `MEMORY.md` *Current State*. AGENTS.md *Current Reality* and CLAUDE.md *Current Project State* describe durable structure and point to `MEMORY.md`; the automate mode may not edit those two files, so any "does not exist yet" sentence there is stale the moment it runs.
 - `MEMORY.md` above roughly 15,000 characters is a drift finding (a buffer below the roughly 20,000-character context injection limit); the remedy is an archive split, never deletion.
 - "Governance files drafted", a governance audit or update, and "Auto-develop pipeline generated" are recorded only after the corresponding write succeeded, with details in the archive.
 
@@ -102,3 +103,4 @@ If the governance does not specify M1 to M5, automate emits `[NEEDS GOVERNANCE]`
 | *Roles* and models | AGENTS.md, CLAUDE.md | suggested default only | user is asked in automate Step 3 regardless | user's pick differs: `[GOVERNANCE DRIFT]`, corrected through govern, never overridden in the script |
 | Git conventions | AGENTS.md | required for automate | `[NEEDS GOVERNANCE]` or `[USER DECISION REQUIRED]` | diverged: convention drift |
 | *Phase Plan* | AGENTS.md | source of the backlog | task source is scaffolded empty and `[USER DECISION REQUIRED]` is raised | n/a |
+| Rollback exception | AGENTS.md *Auto-Develop Policy* | required when *Prohibited Actions* forbid `git reset --hard` / `git clean` | the generated script's failure-path discard contradicts the prohibition: `[GOVERNANCE DRIFT]`, resolved through govern, never by weakening the script | n/a |

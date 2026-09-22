@@ -186,7 +186,7 @@ Read `references/agents-template.md` for the structural blueprint. If the file i
 1. **Header** - "Read SOUL.md first" + "Read MEMORY.md next"
 2. **Roles** - implementation model, reviewer(s), review requirements
 3. **Repository Boundary** - stay inside project root, protected files list
-4. **Current Reality** - honest statement of what exists vs what is planned
+4. **Current Reality** - honest statement of what exists vs what is planned (durable facts; volatile state points to MEMORY.md, `references/contract.md` section 3)
 5. **Intended Project Structure** - target directory tree if known
 6. **Workflow** - numbered steps from reading the task to delivery
 7. **Review Rules** - what reviewers check, read-only default, minimum checklist
@@ -199,7 +199,7 @@ Principles for writing `AGENTS.md`:
 
 - Be specific about prohibitions; vague rules get ignored
 - The review section should be genuinely useful, not ceremonial
-- If the project has automation (CI/CD, auto-develop scripts), add an "Auto-Develop Policy" section. See `references/agents-template.md` for a concrete example that addresses MEMORY.md bloat prevention, status line discipline, no-op fix detection, and review loop termination
+- If the project has automation (CI/CD, auto-develop scripts), add an "Auto-Develop Policy" section. See `references/agents-template.md` for a concrete example that addresses MEMORY.md bloat prevention, status line discipline, no-op fix detection, review loop termination, and the rollback exception that keeps *Prohibited Actions* consistent with the pipeline's own failure-path discards
 - If the project uses (or will use) the automate mode, AGENTS.md is the producing side of two optional contracts that mode consumes (`references/contract.md` sections 4 and 5). Add them only when the behaviour is wanted; both are fail-safe when omitted (the pipeline runs unchanged):
   - **Skill Policy** section - explicit `label:`/`title:` -> skill matchers that seed the pipeline's `SKILL_MAP` for deterministic per-task skill routing
   - **Test discipline** fields inside Auto-Develop Policy - `TEST_POLICY` (`off`/`preferred`/`required`) and `TEST_ELIGIBILITY` matchers, paired with `TARGETED_TEST_CMD` in CLAUDE.md
@@ -215,7 +215,7 @@ Read `references/claude-template.md` for the structural blueprint. If the file i
 
 1. **Header** - `@SOUL.md`, `@AGENTS.md`, `@MEMORY.md` references
 2. **Role** - what Claude Code does in this repo
-3. **Current Project State** - brief honest status
+3. **Current Project State** - brief honest status (durable facts; volatile state points to MEMORY.md)
 4. **Tool Preferences** - file tools vs shell, CLI tools to use
 5. **Development Commands** - code block with dev/build/test/lint commands
 6. **Working Rules** - read-before-write, update `MEMORY.md`, stay in project root

@@ -44,6 +44,8 @@ Good audit targets include:
   - A non-`off` `TEST_POLICY` with empty or inert `TEST_ELIGIBILITY`, or a `TARGETED_TEST_CMD` present while `TEST_POLICY` is `off`/absent -> `[NEEDS GOVERNANCE]` (partial/contradictory test contract)
   - `TARGETED_TEST_CMD` missing its literal `{TARGET}` token
   - `label:` eligibility/skill matchers on a label-less task source (local task-list / MEMORY.md "Next Up"), where only `title:` matchers can ever match
+- AGENTS.md *Prohibited Actions* forbidding `git reset --hard` / `git clean` while the generated script discards its own uncommitted task work on failure paths, with no rollback exception declared in *Auto-Develop Policy* -> `[GOVERNANCE DRIFT]` (`references/contract.md` section 6)
+- AGENTS.md *Current Reality* or CLAUDE.md *Current Project State* asserting that automation, the task source, or a phase does not exist while it does -> Outdated, `[GOVERNANCE DRIFT]`; volatile facts belong in MEMORY.md *Current State* (`references/contract.md` section 3)
 
 ## Part B: Script drift
 

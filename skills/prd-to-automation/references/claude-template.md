@@ -31,6 +31,7 @@ Claude Code is the execution environment for this repository.
 - {Honest status, e.g., "The repository is still in documentation and planning mode."}
 - {What exists, e.g., "There is no application source tree yet."}
 - {Next milestone, e.g., "The next major milestone is Phase A: project skeleton."}
+- {Volatile facts (generated automation, task source, implemented phases) live in MEMORY.md Current State; say "see MEMORY.md" rather than asserting what does not exist yet.}
 
 ## Tool Preferences
 
@@ -90,5 +91,5 @@ Optional:
 - Development Commands must be copy-pasteable - use actual commands, not placeholders. If the repo is not yet bootstrapped, mark inferred commands with a `# planned` comment so agents know these are not yet runnable.
 - `TARGETED_TEST_CMD` is optional and only relevant when the project uses the automate mode's test gate. Include it only when AGENTS.md declares a `TEST_POLICY` other than `off`; `TEST_POLICY=required` without it forces the pipeline to degrade to `preferred` and log `[GOVERNANCE DRIFT]`. The `{TARGET}` token must be preserved literally - the pipeline substitutes the concrete test id/path at runtime.
 - Environment Variables list what the app needs, not how to configure the hosting provider.
-- Current Project State should be honest. Update it (or instruct the user to update it) as the project progresses.
+- Current Project State should be honest and durable. Volatile facts belong in MEMORY.md *Current State*; a claim such as "no automation yet" goes stale as soon as the automate mode runs, and that mode may not edit this file.
 - The Role section should be short. Detailed behavioral rules live in AGENTS.md.

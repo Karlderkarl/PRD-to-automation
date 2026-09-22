@@ -94,7 +94,7 @@ Read all four files completely and extract the values the script needs. Use `ref
 - **Git conventions** (from AGENTS.md): base branch name, branch naming pattern, commit format, force-push/hook policy.
 - **Task source**: GitHub Issues + label, or a local task-list file, or MEMORY.md "Next Up".
 - **Memory paths + rules** (from MEMORY.md *Update Rules*): `MEMORY.md`, the archive path, the status-line and exclusion rules (`references/contract.md` section 3).
-- **Review focus** (from SOUL.md security/coding + AGENTS.md prohibited actions): the concise rule set to inject into review prompts.
+- **Review focus** (from SOUL.md security/coding + AGENTS.md prohibited actions): the concise rule set to inject into review prompts. Check the *Prohibited Actions* against the pipeline's own rollback (`git reset --hard` + `git clean` of its uncommitted task work on a failed step): without a declared exception in *Auto-Develop Policy* that is `[GOVERNANCE DRIFT]`; report it and switch to govern, never weaken the prohibition or the rollback in the script.
 - **Skill policy** (from AGENTS.md *Skill Policy*, if present): the explicit `label:`/`title:` → skill matchers that seed `SKILL_MAP`. **Absent is fine**: an empty `SKILL_MAP` is a valid no-op, not `[NEEDS GOVERNANCE]`. Never invent matchers.
 - **Test policy** (from AGENTS.md *Auto-Develop Policy* + CLAUDE.md *Development Commands*, if present): `TEST_POLICY`, explicit `TEST_ELIGIBILITY` matchers, and `TARGETED_TEST_CMD` with a `{TARGET}` token. Entirely absent is the valid backward-compatible default (`off`), not `[NEEDS GOVERNANCE]`. But partial/contradictory fields are not: `TEST_POLICY=required` without `TARGETED_TEST_CMD` is `[GOVERNANCE DRIFT]` (the generated automation must degrade enforcement to `preferred`); `TARGETED_TEST_CMD` with policy off/absent, or a set policy with empty/inert eligibility, is `[NEEDS GOVERNANCE]` (`references/contract.md` section 6).
 - **Reference docs + env vars + toolchain setup**: any PATH export, runtime activation, or `# planned` setup the project's commands need before they run, plus reference docs the agents should read. Derive these only from governance; never hardcode a default toolchain.
@@ -161,6 +161,7 @@ From `references/auto-develop-template.md`, produce the project's script:
 2. List any `[NEEDS GOVERNANCE]`, `[USER DECISION REQUIRED]`, or `[GOVERNANCE DRIFT]` items.
 3. Ask for approval before writing files; in Sync, show the drift and proposed diffs first.
 4. After writing, record a single line in `MEMORY.md` per its update rules (e.g., "Auto-develop pipeline generated"); detail goes to `memory/completed-phases.md`. Do not commit; let the user review.
+5. Then re-read AGENTS.md *Current Reality* and CLAUDE.md *Current Project State*: any sentence that now claims the automation or task source does not exist is `[GOVERNANCE DRIFT]`. Report it with a proposed govern Update/merge; never edit those files here.
 
 ### Sync
 
