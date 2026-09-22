@@ -196,6 +196,7 @@ Phasen 3 bis 5 sind voneinander unabhängig, sobald Phase 2 steht.
 - `[USER DECISION REQUIRED]` Historie der alten Repos importieren (`git subtree`) oder nur der Herkunftsvermerk im CHANGELOG. Vorschlag: nur der Vermerk, die Historie bleibt in den archivierten Repos erhalten.
 - `[USER DECISION REQUIRED]` Veröffentlichung auf skills.sh unter dem neuen Namen. Annahme: ja.
 - `[USER DECISION REQUIRED]` Die Modus-Referenzen behalten in 1.0.0 die vollständigen Checklisten der Ursprungsskills. Kürzen ist Aufgabe einer späteren Version, nachdem der Nachweis in `docs/parity.md` steht. Annahme: ja.
+- **Entschieden am 2026-09-22 (Abweichung von R6 bis R8 und Kriterium 5):** Die in drei unabhängigen Reviews und einem Verhaltenstest nachgewiesenen Laufzeitfehler des Ursprungs-Templates und die zwei Template-Widersprüche (Rollback-Verbot gegen Pipeline-Rollback; sofort veraltete Statussätze) werden bereits in 1.0.0 behoben. Die Abweichungen stehen im CHANGELOG unter "Fixed" und "Changed"; keine Ursprungsregel entfällt (`docs/parity.md`).
 
 ## 7. Akzeptanzkriterien
 

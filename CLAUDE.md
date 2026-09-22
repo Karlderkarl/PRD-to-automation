@@ -12,7 +12,7 @@ Idea/PRD ─▶ govern ─▶ SOUL.md / AGENTS.md / CLAUDE.md / MEMORY.md ─▶
                                         ▲ audit reads all of it, writes nothing ▲
 ```
 
-The skill merged `prd-to-governance` 1.2.0 (now govern) and `governance-to-automation` 1.2.2 (now automate) with **unchanged behaviour**. Those names appear in the skill only as provenance. The PRD proposed the name `governance-pipeline`; repo and skill were named `PRD-to-automation` / `prd-to-automation` on 2026-09-22 (PRD section 6). `docs/PRD.md` (German) is the PRD this repository was built from; `docs/parity.md` proves every origin rule has a home.
+The skill merged `prd-to-governance` 1.2.0 (now govern) and `governance-to-automation` 1.2.2 (now automate) with **unchanged behaviour**, apart from the fixes to the inherited pipeline template listed in the CHANGELOG (a decided deviation from PRD R6 to R8, `docs/PRD.md` section 6). Those names appear in the skill only as provenance. The PRD proposed the name `governance-pipeline`; repo and skill were named `PRD-to-automation` / `prd-to-automation` on 2026-09-22 (PRD section 6). `docs/PRD.md` (German) is the PRD this repository was built from; `docs/parity.md` proves every origin rule has a home.
 
 ## Skill anatomy
 
@@ -47,7 +47,7 @@ A mode loads only the references it needs; `SKILL.md` names them per mode. Front
 - Uncertainty markers: `[NEEDS PRD CLARIFICATION]`, `[NEEDS CODEBASE DISCOVERY]`, `[USER DECISION REQUIRED]`, `[GOVERNANCE DRIFT]`, `[NEEDS GOVERNANCE]`. Priority levels **Critical** / **Required** / **Advisory**, only where they sharpen real stakes. Both are defined in `contract.md`.
 - **Link, don't duplicate**: prompts and references tell agents to *read* the governance files rather than copying them; mode references point to `contract.md` instead of repeating it.
 - Cross-mode references are mode switches ("switch to govern mode"), never "install skill X". The origin skill names may appear only as provenance.
-- The blueprints `auto-develop-template.md`, `prompt-builders.md`, `task-list-template.md`, `extraction-checklist.md` and the five governance templates are carried over verbatim from the origins; only cross-skill references were rewritten. Keep it that way unless the change is a deliberate, changelogged behaviour change.
+- The blueprints `auto-develop-template.md`, `prompt-builders.md`, `task-list-template.md`, `extraction-checklist.md` and the five governance templates are carried over from the origins; the only changes are the rewritten cross-skill references and the changelogged 1.0.0 fixes and additions. Keep it that way unless the change is a deliberate, changelogged behaviour change.
 - Skill text and README stay English. `docs/PRD.md` and internal notes may be German; the task titles in `examples/refact-todo.md` are German because the fixture is verbatim origin content.
 - Lowercase-hyphenated Markdown filenames, LF line endings (enforced by `.gitattributes`).
 
@@ -74,4 +74,3 @@ The frontmatter validator is the `quick_validate.py` script shipped with Anthrop
 
 - The root `AGENTS.md` describes this repo's own contributor guidelines. It is *not* a governance file produced by the govern mode; do not treat it as pipeline input. There is no `SOUL.md` or `MEMORY.md` here, so do not add `@SOUL.md` / `@MEMORY.md` references.
 - Publishing steps (GitHub repo creation, tags, the "superseded" banner in the two origin repos, archiving) are outward-facing and need the user's explicit go-ahead. The release tooling is local and gitignored (`publish/`, see its README); the user runs it, since a Claude Code session may neither create public repos nor merge PRs.
-- The branch `fix/pipeline-runtime-guards` (pushed alongside `main`) holds three runtime fixes for `references/auto-develop-template.md` (explicit failure guards, reviewer verdict parsing, fail-closed dependency check). It is kept off 1.0.0 on purpose because PRD R8 requires unchanged behaviour; it is the planned 1.0.1. Remove this note when it merges.

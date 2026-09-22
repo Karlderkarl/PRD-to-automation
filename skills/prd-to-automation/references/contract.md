@@ -1,6 +1,6 @@
 # The governance-to-pipeline contract
 
-**Contract version: 1.0.1.** Any change to this file is a contract change and is recorded as such in `CHANGELOG.md`.
+**Contract version: 1.0.0.** Any change to this file is a contract change and is recorded as such in `CHANGELOG.md`.
 
 This file defines once what the **govern** mode writes, the **automate** mode reads, and the **audit** mode checks. The mode references (`references/govern.md`, `references/automate.md`, `references/audit.md`) and the blueprints link here for the definitions; wherever a mode reference restates a rule for readability, this file is the authoritative wording. The contract is exactly what `prd-to-governance` 1.2.0 produced and `governance-to-automation` 1.2.2 consumed; consolidating it here changed no behaviour.
 

@@ -8,7 +8,7 @@ metadata:
 
 # PRD to Automation
 
-One skill, three modes. It takes a project from a PRD to governance files, from governance to a generated `auto-develop.sh` pipeline, and audits both for drift. Each mode preserves the behaviour of its origin: **govern** is `prd-to-governance` 1.2.0, **automate** is `governance-to-automation` 1.2.2, **audit** joins the read-only audit parts of both. Those names appear in this skill only as provenance; never install or invoke them.
+One skill, three modes. It takes a project from a PRD to governance files, from governance to a generated `auto-develop.sh` pipeline, and audits both for drift. Each mode preserves the behaviour of its origin: **govern** is `prd-to-governance` 1.2.0, **automate** is `governance-to-automation` 1.2.2, **audit** joins the read-only audit parts of both. The only deliberate deviations are the fixes to the inherited pipeline template listed in the CHANGELOG. Those names appear in this skill only as provenance; never install or invoke them.
 
 ## Project root
 

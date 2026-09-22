@@ -76,7 +76,7 @@ Neither replaces the other; pick the one for your harness.
 
 ## Origin
 
-This skill merges two earlier Claude Code skills without changing their behaviour: [`prd-to-governance`](https://github.com/Karlderkarl/prd-to-governance) 1.2.0 became the govern mode and [`governance-to-automation`](https://github.com/Karlderkarl/governance-to-automation) 1.2.2 became the automate mode; their audit parts became the audit mode. Projects generated with those versions keep working unchanged. `docs/parity.md` maps every rule of both quality checklists to its new location. The PRD (`docs/PRD.md`) proposed the name `governance-pipeline`; repo and skill are named `PRD-to-automation` / `prd-to-automation` since 2026-09-22, leaving that name to the pi sister project.
+This skill merges two earlier Claude Code skills with unchanged behaviour, apart from the fixes to the inherited pipeline template listed in the CHANGELOG: [`prd-to-governance`](https://github.com/Karlderkarl/prd-to-governance) 1.2.0 became the govern mode and [`governance-to-automation`](https://github.com/Karlderkarl/governance-to-automation) 1.2.2 became the automate mode; their audit parts became the audit mode. Projects generated with those versions keep working unchanged. `docs/parity.md` maps every rule of both quality checklists to its new location. The PRD (`docs/PRD.md`) proposed the name `governance-pipeline`; repo and skill are named `PRD-to-automation` / `prd-to-automation` since 2026-09-22, leaving that name to the pi sister project.
 
 ## Security
 
