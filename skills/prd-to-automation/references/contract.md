@@ -48,7 +48,7 @@ Rules that every generated pipeline must implement exactly (all **Critical**):
 - **M4 No-op fix detection**: if a fix cycle changes only `MEMORY.md` or logs and no real code, the remaining findings are accepted deviations and the review loop breaks.
 - **M5 Dependency blocking**: `Depends on #N` (or the task-list equivalent) hard-blocks a task until every dependency is done; blocked tasks are skipped, not failed.
 - **M6 Non-empty checkpoint**: the correctness checkpoint commit requires a non-empty code diff (excluding `MEMORY.md` and logs). A memory-only run produces no commit and no PR.
-- **M7 Governance is read-only at runtime**: the running pipeline writes application code, `MEMORY.md`, and the archive, and nothing else. Every write-capable prompt forbids editing `SOUL.md`, `AGENTS.md`, and `CLAUDE.md` and forbids committing; the pipeline owns the commit.
+- **M7 Governance is read-only at runtime**: the running pipeline writes application code and tests, `MEMORY.md` and the archive, its own logs under the log directory, and the task source's status (a local task list's `status:` field; a GitHub issue is closed through its PR), and nothing else. Every write-capable prompt forbids editing `SOUL.md`, `AGENTS.md`, and `CLAUDE.md` and forbids committing; the pipeline owns the commit.
 
 Generation-time scope is a different thing: the automate mode itself writes only `MEMORY.md` (one line) plus the generated artifacts (script, task source, `.gitignore` entry, run guide) and never edits `SOUL.md`, `AGENTS.md`, or `CLAUDE.md`. The mode generates; the pipeline implements.
 
