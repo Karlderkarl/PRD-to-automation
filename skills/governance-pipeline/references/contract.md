@@ -2,7 +2,7 @@
 
 **Contract version: 1.0.0.** Any change to this file is a contract change and is recorded as such in `CHANGELOG.md`.
 
-This file defines once what the **govern** mode writes, the **automate** mode reads, and the **audit** mode checks. The mode references (`govern.md`, `automate.md`, `audit.md`) and the blueprints link here instead of repeating it. The contract is exactly what `prd-to-governance` 1.2.0 produced and `governance-to-automation` 1.2.2 consumed; consolidating it here changed no behaviour.
+This file defines once what the **govern** mode writes, the **automate** mode reads, and the **audit** mode checks. The mode references (`references/govern.md`, `references/automate.md`, `references/audit.md`) and the blueprints link here for the definitions; wherever a mode reference restates a rule for readability, this file is the authoritative wording. The contract is exactly what `prd-to-governance` 1.2.0 produced and `governance-to-automation` 1.2.2 consumed; consolidating it here changed no behaviour.
 
 | Section | govern (producer) | automate (consumer) | audit (checker) |
 |---|---|---|---|
@@ -33,7 +33,7 @@ Do not force priority tags onto every bullet. Use them where they clarify what t
 
 ## 3. Memory rules
 
-Layout that govern produces (blueprints: `memory-template.md`, `completed-phases-template.md`, `agents-template.md` *Auto-Develop Policy*):
+Layout that govern produces (blueprints: `references/memory-template.md`, `references/completed-phases-template.md`, `references/agents-template.md` *Auto-Develop Policy*):
 
 - `MEMORY.md` is the living state: Current State, Completed Work (archive reference only), Key Decisions, Key Implementation Notes, Next Up, Content Sources, Infrastructure, Governance Drift, Update Rules. Start at 40 to 60 lines.
 - `memory/completed-phases.md` is the archive for completed-work details, created by default and organised with `### Phase Name` subheadings. It must not be gitignored; if `memory/` holds daily flush files, ignore them with a precise pattern such as `memory/2026-*.md`.
@@ -48,20 +48,22 @@ Rules that every generated pipeline must implement exactly (all **Critical**):
 - **M4 No-op fix detection**: if a fix cycle changes only `MEMORY.md` or logs and no real code, the remaining findings are accepted deviations and the review loop breaks.
 - **M5 Dependency blocking**: `Depends on #N` (or the task-list equivalent) hard-blocks a task until every dependency is done; blocked tasks are skipped, not failed.
 - **M6 Non-empty checkpoint**: the correctness checkpoint commit requires a non-empty code diff (excluding `MEMORY.md` and logs). A memory-only run produces no commit and no PR.
-- **M7 Write scope**: the pipeline writes only `MEMORY.md` plus the generated artifacts. Every write-capable prompt forbids editing `SOUL.md`, `AGENTS.md`, and `CLAUDE.md` and forbids committing; the pipeline owns the commit.
+- **M7 Governance is read-only at runtime**: the running pipeline writes application code, `MEMORY.md`, and the archive, and nothing else. Every write-capable prompt forbids editing `SOUL.md`, `AGENTS.md`, and `CLAUDE.md` and forbids committing; the pipeline owns the commit.
+
+Generation-time scope is a different thing: the automate mode itself writes only `MEMORY.md` (one line) plus the generated artifacts (script, task source, `.gitignore` entry, run guide) and never edits `SOUL.md`, `AGENTS.md`, or `CLAUDE.md`. The mode generates; the pipeline implements.
 
 If the governance does not specify M1 to M5, automate emits `[NEEDS GOVERNANCE]` and switches to govern; it never invents the policy.
 
 ## 4. Skill Policy and `SKILL_MAP`
 
-**Producer** (govern, blueprint `agents-template.md` *Skill Policy Example*): an optional AGENTS.md section *Skill Policy*. Each line is one explicit matcher `<type>:<pattern> = <skill-name>`:
+**Producer** (govern, blueprint `references/agents-template.md` *Skill Policy Example*): an optional AGENTS.md section *Skill Policy*. Each line is one explicit matcher `<type>:<pattern> = <skill-name>`:
 
 - `<type>` is `label` (matched against a whole issue or task label; multi-word labels are fine) or `title` (an extended regex tested against the task title and body).
 - Whitespace around `:` and `=` is optional. The pattern may contain `:` but never `=`.
 - Matchers must be unambiguous: if two matchers resolve to different skills for the same task, the pipeline logs `(ambiguous)` and injects nothing. Keep patterns disjoint.
 - Omitting the section is a valid no-op. Never invent matchers to fill it.
 
-**Consumer** (automate, blueprint `auto-develop-template.md` `resolve_skill`):
+**Consumer** (automate, blueprint `references/auto-develop-template.md` `resolve_skill`):
 
 - `SKILL_MAP=()` holds the matchers from AGENTS.md plus any entries the operator authored locally with explicit approval (marked as local in the sign-off). Empty is fully functional.
 - `resolve_skill` runs once per task, before implementation, and sets `RESOLVED_SKILL` and `RESOLVED_SKILL_REASON`. It touches no filesystem, registry, or network and performs no semantic search.
@@ -72,13 +74,13 @@ If the governance does not specify M1 to M5, automate emits `[NEEDS GOVERNANCE]`
 
 ## 5. Test discipline
 
-**Producer** (govern, blueprints `agents-template.md` *Test discipline*, `claude-template.md` *Development Commands*):
+**Producer** (govern, blueprints `references/agents-template.md` *Test discipline*, `references/claude-template.md` *Development Commands*):
 
 - AGENTS.md *Auto-Develop Policy*: `TEST_POLICY` is `off`, `preferred`, or `required`; `TEST_ELIGIBILITY` is one matcher per line in the form `<type>:<pattern>=<include|except>` with the same `label:` / `title:` types as section 4.
 - CLAUDE.md *Development Commands*: `TARGETED_TEST_CMD` with a literal `{TARGET}` token (for example `pytest {TARGET}`). Include it only when `TEST_POLICY` is not `off`.
 - Omitting all fields keeps the gate `off`; that is the backward-compatible default, not a gap.
 
-**Consumer** (automate, blueprint `auto-develop-template.md` `resolve_test_policy`, `run_targeted_test_gate`):
+**Consumer** (automate, blueprint `references/auto-develop-template.md` `resolve_test_policy`, `run_targeted_test_gate`):
 
 - Eligibility resolves once per task, logged to `test-policy.log`, with the same discipline as skill resolution and no "ambiguous" outcome: `except` wins over `include`; then an `include` match is eligible; otherwise the base default follows the declared, well-formed matchers (allowlist when usable `include` matchers exist, denylist when only usable `except` matchers exist). A dead matcher (unknown type, invalid regex, malformed entry) is warned and never arms the denylist base. An empty or inert set fails safe to `off` with a warning; it never falls through to "test every task". Wiring is task-source-general; on label-less sources only `title:` matchers can match.
 - The gate proves a red-to-green transition for exactly one designated test: the model authors the test before implementation, `expect_red` must return non-zero, and the same target is rerun after implementation. The RED-confirmed target is frozen in `FROZEN_TARGETED_TEST_TARGET` for the rest of the task. `TARGETED_TEST_FILE`, `FROZEN_TARGETED_TEST_TARGET`, and `TEST_GATE_ACTIVE` are reset at the top of every task in every variant.

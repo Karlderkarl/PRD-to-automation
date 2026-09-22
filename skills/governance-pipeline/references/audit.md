@@ -2,7 +2,7 @@
 
 This mode is **read-only**. It writes nothing: no governance file, no script, no `MEMORY.md` line. It combines the audit half of `prd-to-governance` 1.2.0 (governance drift), the Audit/Sync report and Validate mode of `governance-to-automation` 1.2.2 (script drift, validation), and presents them as **one report**. Changes happen only after switching to the govern or automate mode and after the user's approval.
 
-Shared vocabulary and the automation-contract fields: see `contract.md`.
+Shared vocabulary and the automation-contract fields: see `references/contract.md`.
 
 For this mode, one project equals one folder. The project root is the folder that contains the governance files; confirm it if ambiguous. Read only inside it.
 
@@ -38,7 +38,7 @@ Good audit targets include:
 - MEMORY.md exceeding ~15,000 characters, a buffer below the ~20,000-character context injection limit (suggest archive split)
 - MEMORY.md containing inline completed issue entries instead of only the archive reference
 - `memory/completed-phases.md` missing despite a MEMORY.md archive reference
-- For projects wired to the automate mode, governance-side coherence of the automation contracts (`contract.md` sections 4 to 6):
+- For projects wired to the automate mode, governance-side coherence of the automation contracts (`references/contract.md` sections 4 to 6):
   - AGENTS.md *Skill Policy* matchers that are malformed (not `<type>:<pattern>=<skill>`, or a `=` inside the pattern), use an unknown type, or overlap so two matchers resolve to different skills for one task (the pipeline would log `(ambiguous)` and inject nothing)
   - AGENTS.md `TEST_POLICY=required` with no `TARGETED_TEST_CMD` in CLAUDE.md -> `[GOVERNANCE DRIFT]` (the pipeline silently degrades to `preferred`)
   - A non-`off` `TEST_POLICY` with empty or inert `TEST_ELIGIBILITY`, or a `TARGETED_TEST_CMD` present while `TEST_POLICY` is `off`/absent -> `[NEEDS GOVERNANCE]` (partial/contradictory test contract)
@@ -47,11 +47,11 @@ Good audit targets include:
 
 ## Part B: Script drift
 
-Read the existing script, re-extract the parameters from the current governance exactly as automate Step 1 does (`extraction-checklist.md`), and report mismatches in six classes, tagging significant ones `[GOVERNANCE DRIFT]`:
+Read the existing script, re-extract the parameters from the current governance exactly as automate Step 1 does (`references/extraction-checklist.md`), and report mismatches in six classes, tagging significant ones `[GOVERNANCE DRIFT]`:
 
 - **Stale checks** - script runs commands that no longer exist in CLAUDE.md (or misses new ones)
 - **Role/model drift** - script roles, runners, or model selections differ from AGENTS.md/CLAUDE.md expectations
-- **Memory-rule drift** - script no longer matches MEMORY.md update rules (diff exclusion, status-line, archive ownership, no-op detection; `contract.md` section 3)
+- **Memory-rule drift** - script no longer matches MEMORY.md update rules (diff exclusion, status-line, archive ownership, no-op detection; `references/contract.md` section 3)
 - **Convention drift** - base branch, label, commit format, or dependency handling diverged
 - **Skill-policy drift** - `SKILL_MAP` no longer matches the AGENTS.md *Skill Policy* plus explicitly user-approved local entries (stale/missing matchers, entries with neither a policy nor a user-approval source, or overlapping rules that now resolve to `(ambiguous)`)
 - **Test-policy drift** - the script's `TEST_POLICY`, `TEST_ELIGIBILITY`, or targeted-test gate no longer matches AGENTS.md *Auto-Develop Policy* / CLAUDE.md `TARGETED_TEST_CMD`

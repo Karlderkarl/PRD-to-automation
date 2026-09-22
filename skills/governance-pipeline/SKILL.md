@@ -1,6 +1,6 @@
 ---
 name: governance-pipeline
-description: "Turn a PRD into project governance (SOUL.md, AGENTS.md, CLAUDE.md, MEMORY.md), turn that governance into a project-tailored, stack-agnostic auto-develop pipeline script, and audit both for drift. Use when bootstrapping or refreshing governance from a PRD, generating or syncing an auto-develop.sh from existing governance, or checking governance and pipeline drift, dry-running a generated script. Do not trigger merely because a repository contains an AGENTS.md; the user must ask for governance, automation, or an audit of them."
+description: "Turn a PRD into project governance (SOUL.md, AGENTS.md, CLAUDE.md, MEMORY.md), turn that governance into a project-tailored, stack-agnostic auto-develop pipeline script, and audit both for drift. Use when bootstrapping or refreshing governance from a PRD, generating or syncing an auto-develop.sh from existing governance, or checking governance and pipeline drift, including dry-running a generated script. Do not trigger merely because a repository contains an AGENTS.md; the user must ask for governance, automation, or an audit of them."
 license: MIT
 metadata:
   version: 1.0.0
@@ -18,11 +18,11 @@ One project equals one folder. The project root is the folder that contains the 
 
 | Mode | Writes | References to load |
 |---|---|---|
-| **govern** | `SOUL.md`, `AGENTS.md`, `CLAUDE.md`, `MEMORY.md`, `memory/completed-phases.md` | `references/govern.md`, `references/contract.md`; then `soul-template.md`, `agents-template.md`, `claude-template.md`, `memory-template.md`, `completed-phases-template.md` as each file is generated |
-| **automate** | `auto-develop.sh`, the task source, a `.gitignore` entry, a run guide, one line in `MEMORY.md` | `references/automate.md`, `references/contract.md`, `references/extraction-checklist.md`; then `auto-develop-template.md`, `prompt-builders.md`, `task-list-template.md` |
-| **audit** | nothing | `references/audit.md`, `references/contract.md` |
+| **govern** | `SOUL.md`, `AGENTS.md`, `CLAUDE.md`, `MEMORY.md`, `memory/completed-phases.md` | `references/govern.md`, `references/contract.md`; `references/audit.md` when governance files already exist (Update/merge); then `references/soul-template.md`, `references/agents-template.md`, `references/claude-template.md`, `references/memory-template.md`, `references/completed-phases-template.md` as each file is generated |
+| **automate** | `auto-develop.sh`, the task source, a `.gitignore` entry, a run guide, one line in `MEMORY.md` | `references/automate.md`, `references/contract.md`, `references/extraction-checklist.md`; then `references/auto-develop-template.md`, `references/prompt-builders.md`, `references/task-list-template.md` |
+| **audit** | nothing | `references/audit.md`, `references/contract.md`; `references/extraction-checklist.md` when an `auto-develop.sh` is present |
 
-Load only the references the chosen mode needs. Templates and blueprints are structural blueprints, not rigid forms; adapt them to the project.
+Load only the references the chosen mode needs. The templates and blueprints in `references/` are structural blueprints, not rigid forms; adapt them to the project.
 
 ### Mode selection
 
@@ -46,7 +46,7 @@ State the chosen mode in one line before doing any work. When a mode finds work 
 ## Boundaries
 
 - **Critical**: govern writes only the four governance files and `memory/completed-phases.md`, only after the user's explicit per-file decision and approval. It never commits.
-- **Critical**: automate writes only `MEMORY.md` (one line, per its own update rules) plus the generated artifacts. It never edits `SOUL.md`, `AGENTS.md`, or `CLAUDE.md`. A needed correction is `[GOVERNANCE DRIFT]` and goes through govern. It never runs the real pipeline loop; validation means `bash -n`, `shellcheck`, `--dry-run`.
+- **Critical**: automate writes only `MEMORY.md` (one line, per its own update rules) plus the generated artifacts. It never edits `SOUL.md`, `AGENTS.md`, or `CLAUDE.md`. A needed correction is `[GOVERNANCE DRIFT]` and goes through govern. It never starts without all four governance files. It never runs the real pipeline loop; validation means `bash -n`, `shellcheck`, `--dry-run`.
 - **Critical**: audit writes nothing. Changes happen only after switching to govern or automate and after approval.
 - **Critical**: generated scripts keep `bypassPermissions`, `danger-full-access`, and auto-merge off by default. They are reachable only via `--unattended` / `--auto-merge` behind the runtime `confirm_privileged_mode` gate, and are never written as defaults.
 - **Required**: stack-agnostic. The generated script assumes no toolchain. Checks come verbatim from `CLAUDE.md` into `CHECKS=()`; an empty array is a valid no-op.
@@ -56,7 +56,7 @@ State the chosen mode in one line before doing any work. When a mode finds work 
 
 ## Presenting work
 
-Every mode ends by presenting what was done or found, every decision that was not explicit in the inputs, and all open markers. govern and automate ask for explicit approval before writing anything; audit proposes which mode to switch to. Neither mode commits; the user reviews first.
+Every mode ends by presenting what was done or found, every decision that was not explicit in the inputs, and all open markers. govern and automate ask for explicit approval before writing anything; audit proposes which mode to switch to. No mode commits; the user reviews first.
 
 ## Backward compatibility
 

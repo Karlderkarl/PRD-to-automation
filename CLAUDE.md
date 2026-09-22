@@ -34,7 +34,7 @@ A mode loads only the references it needs; `SKILL.md` names them per mode. Front
 
 ## The contract (most important architecture)
 
-`references/contract.md` is the single definition of what govern writes, automate reads, and audit checks. It has its own version. Mode references and blueprints **link to it and never restate it**. A change there is a contract change and must be labelled as such in `CHANGELOG.md`. Keep these invariants intact when editing anything:
+`references/contract.md` is the single definition of what govern writes, automate reads, and audit checks. It has its own version. Mode references and blueprints **link to it for the definitions**; where a mode reference restates a rule (the full origin checklists are kept in 1.0.0), the contract is the authoritative wording. A change there is a contract change and must be labelled as such in `CHANGELOG.md`. Keep these invariants intact when editing anything:
 
 - Review diffs **exclude** `MEMORY.md` (`git diff <base> -- . ':!MEMORY.md'`); the implement/fix/refactor steps write **one overwritten** "Next Up" line; only the post-review memory step writes completed work, to `memory/completed-phases.md`; **no-op fix detection** breaks the loop; `Depends on #N` hard-blocks; the checkpoint commit needs a **non-empty code diff**.
 - **Boundary**: automate writes only `MEMORY.md` plus generated artifacts and never edits `SOUL.md` / `AGENTS.md` / `CLAUDE.md`; corrections go through govern. audit writes nothing. automate never starts without all four governance files and never runs the real loop.
@@ -48,12 +48,12 @@ A mode loads only the references it needs; `SKILL.md` names them per mode. Front
 - **Link, don't duplicate**: prompts and references tell agents to *read* the governance files rather than copying them; mode references point to `contract.md` instead of repeating it.
 - Cross-mode references are mode switches ("switch to govern mode"), never "install skill X". The origin skill names may appear only as provenance.
 - The blueprints `auto-develop-template.md`, `prompt-builders.md`, `task-list-template.md`, `extraction-checklist.md` and the five governance templates are carried over verbatim from the origins; only cross-skill references were rewritten. Keep it that way unless the change is a deliberate, changelogged behaviour change.
-- Skill text and README stay English. `docs/PRD.md` and internal notes may be German.
-- Lowercase-hyphenated Markdown filenames, LF line endings (the repo sets `core.autocrlf=false`).
+- Skill text and README stay English. `docs/PRD.md` and internal notes may be German; the task titles in `examples/refact-todo.md` are German because the fixture is verbatim origin content.
+- Lowercase-hyphenated Markdown filenames, LF line endings (enforced by `.gitattributes`).
 
 ## Fixtures
 
-`examples/auto-develop.payload-sample.sh` and `examples/refact-todo.md` are **sample outputs** generated for a Node/pnpm + Payload CMS project. They are not this repository's build system and are never run here. The sample script is a pre-refactor-pass snapshot and is intentionally not re-synced; `references/auto-develop-template.md` is the current pipeline shape. Both mirror the safe-by-default privileged policy.
+`examples/auto-develop.payload-sample.sh` and `examples/refact-todo.md` are **sample outputs** generated for a Node/pnpm + Payload CMS project. They are not this repository's build system and are never run here. The sample script is a pre-refactor-pass snapshot and is intentionally not re-synced; `references/auto-develop-template.md` is the current pipeline shape. The sample script mirrors the safe-by-default privileged policy.
 
 ## Commands
 
@@ -65,7 +65,7 @@ shellcheck examples/auto-develop.payload-sample.sh                   # lint it (
 python <skill-creator>/scripts/quick_validate.py skills/governance-pipeline   # frontmatter validation
 wc -l skills/governance-pipeline/SKILL.md                            # must stay at or below 200 lines
 rg -n 'prd-to-governance|governance-to-automation' skills/           # only provenance mentions allowed
-rg -n 'bypassPermissions|danger-full-access|merge --squash' skills/ examples/   # never as a default
+rg -n 'bypassPermissions|danger-full-access|--squash' skills/ examples/   # only behind --unattended / --auto-merge, never a default
 ```
 
 The frontmatter validator is the `quick_validate.py` script shipped with Anthropic's `skill-creator` skill (allowed top-level keys: `name`, `description`, `license`, `allowed-tools`, `metadata`, `compatibility`). The origin changelogs did not record which tool validated them; this one enforces the same rule.

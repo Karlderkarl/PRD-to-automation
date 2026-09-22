@@ -2,7 +2,7 @@
 
 This mode **generates the automation** that runs a project end to end. It behaves exactly like `governance-to-automation` 1.2.2 (its origin). It is the execution counterpart to the govern mode:
 
-- the **govern** mode (`govern.md`) produces the four governance files (`SOUL.md`, `AGENTS.md`, `CLAUDE.md`, `MEMORY.md`) and defines **how and where memory is managed** (what goes into `MEMORY.md` vs `memory/completed-phases.md`, the status-line discipline, drift handling). The structure and update rules of those files are owned by govern and fixed in `contract.md`.
+- the **govern** mode (`references/govern.md`) produces the four governance files (`SOUL.md`, `AGENTS.md`, `CLAUDE.md`, `MEMORY.md`) and defines **how and where memory is managed** (what goes into `MEMORY.md` vs `memory/completed-phases.md`, the status-line discipline, drift handling). The structure and update rules of those files are owned by govern and fixed in `references/contract.md`.
 - the **automate** mode (this reference) reads that governance and **emits the runnable pipeline**: primarily an `auto-develop.sh` script that processes tasks autonomously: implement → check → review → fix → refactor → re-review → commit → PR. The script *embodies* the memory rules the governance prescribes.
 
 The mode does **not** itself implement features. It writes the machinery that does, configured to one specific project's contract.
@@ -31,13 +31,13 @@ The four governance files are authoritative inputs. This mode consumes them and 
 
 ## Memory discipline is the core integration
 
-**Critical** — The generated pipeline must implement exactly the memory-management rules that the governance defines (MEMORY.md *Update Rules* + any AGENTS.md *Auto-Develop Policy*). They are the contract between govern and automate and are fixed in `contract.md` section 3 (rules M1 to M7: diff exclusion of `MEMORY.md`, one overwritten "Next Up" line, archive-only completed work, no-op fix detection, dependency blocking, non-empty checkpoint, write scope). Wire every one of them; verify each is present.
+**Critical** — The generated pipeline must implement exactly the memory-management rules that the governance defines (MEMORY.md *Update Rules* + any AGENTS.md *Auto-Develop Policy*). They are the contract between govern and automate and are fixed in `references/contract.md` section 3 (rules M1 to M7: diff exclusion of `MEMORY.md`, one overwritten "Next Up" line, archive-only completed work, no-op fix detection, dependency blocking, non-empty checkpoint, write scope). Wire every one of them; verify each is present.
 
 If the governance does not yet specify these, that is `[NEEDS GOVERNANCE]`: switch to the govern mode, which owns the structure and update rules for `MEMORY.md` and the other governance files, rather than inventing the policy here.
 
 ## Deterministic skill resolution
 
-**Required** — If a task should use a specific skill, that decision must be **deterministic and live in the generated script**, never left to a model turn. Otherwise "project-first" behaviour, audit logging, and reproducibility are a hope, not a property. The generated `auto-develop.sh` carries a `resolve_skill` step (see `references/auto-develop-template.md`) with the invariants fixed in `contract.md` section 4:
+**Required** — If a task should use a specific skill, that decision must be **deterministic and live in the generated script**, never left to a model turn. Otherwise "project-first" behaviour, audit logging, and reproducibility are a hope, not a property. The generated `auto-develop.sh` carries a `resolve_skill` step (see `references/auto-develop-template.md`) with the invariants fixed in `references/contract.md` section 4:
 
 - **Mechanism in the script.** A `SKILL_MAP` array of **explicit matchers** (`label:` / `title:` → skill) is the only decision basis. Both matchers resolve deterministically without touching the filesystem. There is **no registry, no network, and no free semantic search** as a hard decision basis.
 - **Resolve once per task.** `resolve_skill` runs a single time per task (before implementation) and sets `RESOLVED_SKILL` / `RESOLVED_SKILL_REASON`.
@@ -59,14 +59,14 @@ Each task runs through **two** review-backed passes:
 
 ## Uncertainty and priority markers
 
-Use the shared vocabulary in `contract.md` sections 1 and 2 so all modes agree. In this mode `[NEEDS GOVERNANCE]` means the governance is missing or too thin to generate from; `[USER DECISION REQUIRED]` covers models, auto-merge, sandbox level, and task source; `[GOVERNANCE DRIFT]` means governance and the existing script or codebase disagree.
+Use the shared vocabulary in `references/contract.md` sections 1 and 2 so all modes agree. In this mode `[NEEDS GOVERNANCE]` means the governance is missing or too thin to generate from; `[USER DECISION REQUIRED]` covers models, auto-merge, sandbox level, and task source; `[GOVERNANCE DRIFT]` means governance and the existing script or codebase disagree.
 
 ## Sub-modes
 
 State the chosen mode and sub-mode in one line before proceeding.
 
 - **Generate** — no automation exists yet; create `auto-develop.sh` and its supporting artifacts from the governance
-- **Sync** — automation already exists; run the script half of the audit (`audit.md`), report drift, and update on approval
+- **Sync** — automation already exists; run the script half of the audit (`references/audit.md`), report drift, and update on approval
 
 Validation of a script without changing anything (lint, dry run) is the **audit** mode; validation of a freshly generated or synced script is Step 6 below.
 
@@ -93,10 +93,10 @@ Read all four files completely and extract the values the script needs. Use `ref
 - **Roles/models** (from AGENTS.md *Roles* + CLAUDE.md): implementation model, reviewer A, reviewer B (if dual review). Treat any model the governance names as a **suggested default only**; the actual per-step model choice is always confirmed with the user in Step 3, never auto-adopted from governance.
 - **Git conventions** (from AGENTS.md): base branch name, branch naming pattern, commit format, force-push/hook policy.
 - **Task source**: GitHub Issues + label, or a local task-list file, or MEMORY.md "Next Up".
-- **Memory paths + rules** (from MEMORY.md *Update Rules*): `MEMORY.md`, the archive path, the status-line and exclusion rules (`contract.md` section 3).
+- **Memory paths + rules** (from MEMORY.md *Update Rules*): `MEMORY.md`, the archive path, the status-line and exclusion rules (`references/contract.md` section 3).
 - **Review focus** (from SOUL.md security/coding + AGENTS.md prohibited actions): the concise rule set to inject into review prompts.
 - **Skill policy** (from AGENTS.md *Skill Policy*, if present): the explicit `label:`/`title:` → skill matchers that seed `SKILL_MAP`. **Absent is fine**: an empty `SKILL_MAP` is a valid no-op, not `[NEEDS GOVERNANCE]`. Never invent matchers.
-- **Test policy** (from AGENTS.md *Auto-Develop Policy* + CLAUDE.md *Development Commands*, if present): `TEST_POLICY`, explicit `TEST_ELIGIBILITY` matchers, and `TARGETED_TEST_CMD` with a `{TARGET}` token. Entirely absent is the valid backward-compatible default (`off`), not `[NEEDS GOVERNANCE]`. But partial/contradictory fields are not: `TEST_POLICY=required` without `TARGETED_TEST_CMD` is `[GOVERNANCE DRIFT]` (the generated automation must degrade enforcement to `preferred`); `TARGETED_TEST_CMD` with policy off/absent, or a set policy with empty/inert eligibility, is `[NEEDS GOVERNANCE]` (`contract.md` section 6).
+- **Test policy** (from AGENTS.md *Auto-Develop Policy* + CLAUDE.md *Development Commands*, if present): `TEST_POLICY`, explicit `TEST_ELIGIBILITY` matchers, and `TARGETED_TEST_CMD` with a `{TARGET}` token. Entirely absent is the valid backward-compatible default (`off`), not `[NEEDS GOVERNANCE]`. But partial/contradictory fields are not: `TEST_POLICY=required` without `TARGETED_TEST_CMD` is `[GOVERNANCE DRIFT]` (the generated automation must degrade enforcement to `preferred`); `TARGETED_TEST_CMD` with policy off/absent, or a set policy with empty/inert eligibility, is `[NEEDS GOVERNANCE]` (`references/contract.md` section 6).
 - **Reference docs + env vars + toolchain setup**: any PATH export, runtime activation, or `# planned` setup the project's commands need before they run, plus reference docs the agents should read. Derive these only from governance; never hardcode a default toolchain.
 
 If a required parameter is missing, mark it `[NEEDS GOVERNANCE]` (switch to govern) or `[USER DECISION REQUIRED]` (ask), do not guess.
@@ -135,9 +135,9 @@ From `references/auto-develop-template.md`, produce the project's script:
 
 - Fill in checks, the explicitly confirmed model/runner mapping, base branch, label/task-source, memory paths, reference docs, PATH/toolchain.
 - Build the prompt functions from `references/prompt-builders.md`, injecting the SOUL/AGENTS rules and always instructing agents to read `SOUL.md`/`AGENTS.md`/`MEMORY.md` first (single source of truth; do not duplicate large governance text into the script).
-- Wire every memory rule from `contract.md` section 3. This is the part most likely to be done wrong; verify each rule is present.
+- Wire every memory rule from `references/contract.md` section 3. This is the part most likely to be done wrong; verify each rule is present.
 - Wire the *Deterministic skill resolution* step: fill `SKILL_MAP` from the AGENTS.md *Skill Policy* plus any explicitly user-approved local entries (empty array only if both are absent), keep the `resolve_skill` function and its one-per-task call before implementation, and inject `RESOLVED_SKILL` only into the implement/fix/refactor prompts. Confirm the decision is logged to `skill-resolution.log`.
-- Wire the optional **test-discipline** contract when governance declares it (`contract.md` section 5): emit `TEST_POLICY`, `TEST_ELIGIBILITY`, and `TARGETED_TEST_CMD` into the script; resolve task eligibility once per task with the same explicit `label:` / `title:` matcher discipline (no heuristic "this probably needed tests"); treat absent fields as the valid `off` default; degrade `required` to `preferred` with a logged `[GOVERNANCE DRIFT]` when no targeted test command exists; and make the gate deterministic by having the implementation/fix flow surface one concrete `{TARGET}` for the script to run.
+- Wire the optional **test-discipline** contract when governance declares it (`references/contract.md` section 5): emit `TEST_POLICY`, `TEST_ELIGIBILITY`, and `TARGETED_TEST_CMD` into the script; resolve task eligibility once per task with the same explicit `label:` / `title:` matcher discipline (no heuristic "this probably needed tests"); treat absent fields as the valid `off` default; degrade `required` to `preferred` with a logged `[GOVERNANCE DRIFT]` when no targeted test command exists; and make the gate deterministic by having the implementation/fix flow surface one concrete `{TARGET}` for the script to run.
 - Keep the proven control flow: clean-worktree guard, dependency check, branch management (branch each issue **from the base branch** and return to it after the PR, so a `--max-issues > 1` run never stacks issue N on issue N-1's unmerged tip), checks-with-autofix, correctness review loop with no-op detection, a checkpoint commit **gated on a non-empty code diff** (a memory-only change must not produce an "implemented" commit), refactor stage (simplify → re-check → re-review) with no-op/round guards, memory-update step, commit/PR (and merge only if opted in). On any failure path, roll back by **discarding** in-progress work and returning to the base branch; never a bare `git checkout` that could carry half-written changes onto it.
 - Factor the A/B review + fix loop into one `review_until_pass` function reused by both the correctness pass and the refactor re-validation; gate the refactor stage on `REFACTOR`/`--no-refactor` and bound it with `MAX_REFACTOR_ROUNDS`. Add `build_refactor_prompt` from `references/prompt-builders.md`: behavior-preserving simplification only, with the "make no change if already clean" instruction that drives convergence.
 
@@ -164,7 +164,7 @@ From `references/auto-develop-template.md`, produce the project's script:
 
 ### Sync
 
-Do not rewrite blindly. Read the existing script, re-extract parameters from current governance, and report mismatches in the six drift classes defined in `audit.md` (stale checks, role/model drift, memory-rule drift, convention drift, skill-policy drift, test-policy drift), together with the governance contract gaps from `contract.md` section 6, tagging significant ones `[GOVERNANCE DRIFT]`. Present findings, then update only the approved parts.
+Do not rewrite blindly. Read the existing script, re-extract parameters from current governance, and report mismatches in the six drift classes defined in `references/audit.md` (stale checks, role/model drift, memory-rule drift, convention drift, skill-policy drift, test-policy drift), together with the governance contract gaps from `references/contract.md` section 6, tagging significant ones `[GOVERNANCE DRIFT]`. Present findings, then update only the approved parts.
 
 ## Adaptation guidelines
 

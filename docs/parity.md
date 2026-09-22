@@ -2,7 +2,7 @@
 
 Release blocker: every rule below must have a location. A rule with no location cannot ship.
 
-Sources: `prd-to-governance` 1.2.0 `SKILL.md` "Quality Checklist" (P1 to P15), `governance-to-automation` 1.2.2 `SKILL.md` "Quality checklist" (A1 to A26), and the Critical invariants of PRD section 4.4 (R14 to R27). Paths are relative to `skills/governance-pipeline/`.
+Sources: `prd-to-governance` 1.2.0 `SKILL.md` "Quality Checklist" (P1 to P15), `governance-to-automation` 1.2.2 `SKILL.md` "Quality checklist" (A1 to A26), and the Critical invariants of PRD section 4.4 (R14 to R27). Paths are relative to `skills/governance-pipeline/`, except `SECURITY.md` and `examples/`, which sit at the repository root.
 
 ## prd-to-governance 1.2.0, Quality Checklist
 
@@ -51,7 +51,7 @@ Other `prd-to-governance` sections that are not checklist items:
 | A9 | Usage covers detached long runs (`tmux`) when asked | `references/automate.md` Step 3 item 5, Step 5, checklist item 9 |
 | A10 | Every memory-discipline rule present in the generated script | `references/contract.md` section 3 (M1 to M7); `references/automate.md` "Memory discipline", Step 4, checklist item 10 |
 | A11 | Skill resolution deterministic: `SKILL_MAP` from governance or approved local entries; `resolve_skill` once per task, logged; `(ambiguous)` injects nothing; injection only into implement/fix/refactor | `references/contract.md` section 4; `references/automate.md` "Deterministic skill resolution", Step 4, checklist item 11 |
-| A12 | Test policy wired for the chosen task source; per-task reset of `TARGETED_TEST_FILE`, `FROZEN_TARGETED_TEST_TARGET`, `TEST_GATE_ACTIVE`; `label:` on label-less sources is `[GOVERNANCE DRIFT]` | `references/contract.md` section 5; `references/automate.md` checklist item 12; `references/task-list-template.md`; `references/audit.md` Part B safety |
+| A12 | Test policy wired for the chosen task source; per-task reset of `TARGETED_TEST_FILE`, `FROZEN_TARGETED_TEST_TARGET`, `TEST_GATE_ACTIVE`; `label:` on label-less sources is `[GOVERNANCE DRIFT]` | `references/contract.md` sections 5 and 6; `references/automate.md` checklist item 12; `references/task-list-template.md`; `references/audit.md` Part B safety |
 | A13 | Test policy deterministic and opt-in: absent is `off`; explicit include/except matchers; `except` wins; no ambiguous outcome; inert set is `off` and warned | `references/contract.md` section 5 and section 6; `references/automate.md` checklist item 13 |
 | A14 | Gate proves red→green with honest scope; RED required before implementation; frozen target; not exit-verified; hard gate only under `required`; `preferred` advisory | `references/contract.md` section 5; `references/automate.md` checklist item 14 |
 | A15 | Model-authored `{TARGET}` sanitized before substitution; `bash -c`, not `eval` | `references/contract.md` section 5; `references/automate.md` checklist item 15; `references/audit.md` Part B safety; `SECURITY.md` |
@@ -60,7 +60,7 @@ Other `prd-to-governance` sections that are not checklist items:
 | A18 | `TEST_POLICY=required` needs `TARGETED_TEST_CMD`; otherwise degrade to `preferred` with `[GOVERNANCE DRIFT]` | `references/contract.md` section 6; `references/automate.md` Step 1 and checklist item 18; `references/audit.md` Parts A and B |
 | A19 | Refactor pass only after the committed checkpoint, via shared `review_until_pass`, kept only on a clean re-review, bounded by no-op detection and `MAX_REFACTOR_ROUNDS` | `references/automate.md` "Two-pass pipeline", Step 4, checklist item 19; `references/audit.md` Part B safety |
 | A20 | Metadata reflects real history: delivered A/B rounds; correctness fixes and refactor rounds distinct | `references/automate.md` "Two-pass pipeline" and checklist item 20; `references/contract.md` M3 |
-| A21 | `SOUL.md`, `AGENTS.md`, `CLAUDE.md` not edited; only `MEMORY.md` plus artifacts changed | `SKILL.md` boundaries; `references/automate.md` "Governance is the contract" and checklist item 21; `references/contract.md` M7 |
+| A21 | `SOUL.md`, `AGENTS.md`, `CLAUDE.md` not edited; only `MEMORY.md` plus artifacts changed | `SKILL.md` boundaries; `references/automate.md` "Governance is the contract" and checklist item 21; `references/contract.md` section 3 (generation-time scope and M7) |
 | A22 | Prompts instruct agents to read the governance and do not duplicate large governance text | `SKILL.md` boundaries ("link, don't duplicate"); `references/automate.md` Step 4 and checklist item 22; `references/prompt-builders.md` |
 | A23 | Privileged flags off by default, only via `--unattended` / `--auto-merge` behind `confirm_privileged_mode`; tmux re-exec propagates opt-in plus `--yes` | `SKILL.md` boundaries; `references/automate.md` Step 3 item 4 and checklist item 23; `references/auto-develop-template.md`; `references/audit.md` Part B safety; `SECURITY.md` |
 | A24 | Script passed `bash -n` (and `shellcheck`); `--dry-run` offered | `references/automate.md` Step 6 and checklist item 24; `references/audit.md` Part C |
@@ -101,4 +101,4 @@ Other `governance-to-automation` sections that are not checklist items:
 | R24 | Privileged modes off; only via `--unattended` / `--auto-merge` behind `confirm_privileged_mode`; never defaults, not in fixtures | `SKILL.md` boundaries; `references/automate.md` Step 3 item 4; `references/auto-develop-template.md`; `examples/`; `SECURITY.md` |
 | R25 | No assumed toolchain; `CHECKS=()` verbatim from `CLAUDE.md`; empty is a valid no-op | `SKILL.md` boundaries; `references/contract.md` section 6; `references/automate.md` Step 1 and "Any stack?" |
 | R26 | Refactor pass only after the committed checkpoint, via `review_until_pass`, kept only on clean re-review, `--no-refactor`, `MAX_REFACTOR_ROUNDS` | `references/automate.md` "Two-pass pipeline" and checklist item 19 |
-| R27 | Automation writes only `MEMORY.md` and generated artifacts; generation never runs the real loop | `SKILL.md` boundaries; `references/contract.md` M7; `references/automate.md` Step 6 and checklist item 21 |
+| R27 | Automation writes only `MEMORY.md` and generated artifacts; generation never runs the real loop | `SKILL.md` boundaries; `references/contract.md` section 3 (generation-time scope); `references/automate.md` Step 6 and checklist item 21 |

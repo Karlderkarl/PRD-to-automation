@@ -70,8 +70,9 @@ drift merely because of the skill change.
   `references/audit.md` Part B; `automate.md` Sync links to it.
 - `governance-to-automation` `references/auto-develop-template.md`, `prompt-builders.md`,
   `task-list-template.md`, `extraction-checklist.md` → `references/` (verbatim; "SKILL.md Step N"
-  pointers now read "`automate.md` Step N", and "route back to prd-to-governance" now reads "switch
-  to govern mode").
+  pointers now read "`automate.md` Step N", "route back to prd-to-governance" now reads "switch
+  to govern mode", and the two pointers to the origin's *Memory discipline* and *Deterministic skill
+  resolution* sections now point to `contract.md` sections 3 and 4).
 - `governance-to-automation` `examples/auto-develop.payload-sample.sh`, `examples/refact-todo.md`
   → `examples/` (verbatim except the header comment, which now names the automate mode and the
   new blueprint path).
