@@ -1,0 +1,7 @@
+interface:
+  display_name: "Governance Pipeline"
+  short_description: "PRD to governance files, governance to an auto-develop pipeline, and drift audits for both."
+  default_prompt: "Use $governance-pipeline to generate governance from this project's PRD, generate or sync its auto-develop pipeline, or audit governance and pipeline for drift. Name the mode (govern, automate, audit) if it is not obvious."
+
+policy:
+  allow_implicit_invocation: true

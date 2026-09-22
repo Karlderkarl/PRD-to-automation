@@ -1,0 +1,102 @@
+# The governance-to-pipeline contract
+
+**Contract version: 1.0.0.** Any change to this file is a contract change and is recorded as such in `CHANGELOG.md`.
+
+This file defines once what the **govern** mode writes, the **automate** mode reads, and the **audit** mode checks. The mode references (`govern.md`, `automate.md`, `audit.md`) and the blueprints link here instead of repeating it. The contract is exactly what `prd-to-governance` 1.2.0 produced and `governance-to-automation` 1.2.2 consumed; consolidating it here changed no behaviour.
+
+| Section | govern (producer) | automate (consumer) | audit (checker) |
+|---|---|---|---|
+| 1 Uncertainty markers | uses them in generated files and reports | uses them in reports and script warnings | uses them to tag findings |
+| 2 Priority levels | tags rules in governance | tags rules in prompts and reports | reports by level |
+| 3 Memory rules | writes them into `MEMORY.md` *Update Rules* and AGENTS.md *Auto-Develop Policy* | encodes every rule into the generated script | reports memory-rule drift |
+| 4 Skill Policy | optional AGENTS.md section | seeds `SKILL_MAP`, resolved by `resolve_skill` | reports malformed or ambiguous matchers, skill-policy drift |
+| 5 Test discipline | optional AGENTS.md and CLAUDE.md fields | seeds `TEST_POLICY`, `TEST_ELIGIBILITY`, `TARGETED_TEST_CMD`, resolved by `resolve_test_policy` | reports partial or contradictory fields, test-policy drift |
+| 6 Field table | what is optional and what is required | what happens when a field is absent | what counts as a gap |
+
+## 1. Uncertainty markers
+
+Use explicit markers instead of a vague "TBD" whenever possible:
+
+- `[NEEDS PRD CLARIFICATION]`: the PRD is the intended source of truth, but it is incomplete or ambiguous
+- `[NEEDS CODEBASE DISCOVERY]`: the answer depends on inspecting the actual repository
+- `[USER DECISION REQUIRED]`: the choice is strategic or preference-based and must not be inferred (in automate: models, auto-merge, sandbox level, task source)
+- `[GOVERNANCE DRIFT]`: the PRD, the governance files, and the current repository or generated script disagree
+- `[NEEDS GOVERNANCE]`: a downstream-automation contract that the governance is expected to define (sections 3 to 5) is missing or too thin to generate from, for example a `TEST_POLICY` set without usable `TEST_ELIGIBILITY` matchers. In govern, use it only for these automation-contract fields; for ordinary gaps prefer the four markers above. In automate, it means: stop, switch to govern, never invent the policy in the script.
+
+## 2. Priority levels
+
+- **Critical**: cannot be violated without explicit user approval; security, compliance, and architectural boundaries
+- **Required**: default operating rule; deviations need explanation
+- **Advisory**: recommendation or preferred pattern; not blocking
+
+Do not force priority tags onto every bullet. Use them where they clarify what truly matters.
+
+## 3. Memory rules
+
+Layout that govern produces (blueprints: `memory-template.md`, `completed-phases-template.md`, `agents-template.md` *Auto-Develop Policy*):
+
+- `MEMORY.md` is the living state: Current State, Completed Work (archive reference only), Key Decisions, Key Implementation Notes, Next Up, Content Sources, Infrastructure, Governance Drift, Update Rules. Start at 40 to 60 lines.
+- `memory/completed-phases.md` is the archive for completed-work details, created by default and organised with `### Phase Name` subheadings. It must not be gitignored; if `memory/` holds daily flush files, ignore them with a precise pattern such as `memory/2026-*.md`.
+- `MEMORY.md` above roughly 15,000 characters is a drift finding (a buffer below the roughly 20,000-character context injection limit); the remedy is an archive split, never deletion.
+- "Governance files drafted", a governance audit or update, and "Auto-develop pipeline generated" are recorded only after the corresponding write succeeded, with details in the archive.
+
+Rules that every generated pipeline must implement exactly (all **Critical**):
+
+- **M1 Diff exclusion**: review diffs and no-op comparisons exclude `MEMORY.md` (`git diff <base> -- . ':!MEMORY.md'`, staged against the base so new files are included) and the log directory.
+- **M2 One status line**: the implement, fix, and refactor steps write exactly one "Next Up" status line to `MEMORY.md`, overwriting, never appending, after reading its Update Rules.
+- **M3 Archive ownership**: only the dedicated post-review memory step writes completed work, and it writes to `memory/completed-phases.md`, never inline. It records correctness fix rounds and accepted refactor rounds as distinct facts.
+- **M4 No-op fix detection**: if a fix cycle changes only `MEMORY.md` or logs and no real code, the remaining findings are accepted deviations and the review loop breaks.
+- **M5 Dependency blocking**: `Depends on #N` (or the task-list equivalent) hard-blocks a task until every dependency is done; blocked tasks are skipped, not failed.
+- **M6 Non-empty checkpoint**: the correctness checkpoint commit requires a non-empty code diff (excluding `MEMORY.md` and logs). A memory-only run produces no commit and no PR.
+- **M7 Write scope**: the pipeline writes only `MEMORY.md` plus the generated artifacts. Every write-capable prompt forbids editing `SOUL.md`, `AGENTS.md`, and `CLAUDE.md` and forbids committing; the pipeline owns the commit.
+
+If the governance does not specify M1 to M5, automate emits `[NEEDS GOVERNANCE]` and switches to govern; it never invents the policy.
+
+## 4. Skill Policy and `SKILL_MAP`
+
+**Producer** (govern, blueprint `agents-template.md` *Skill Policy Example*): an optional AGENTS.md section *Skill Policy*. Each line is one explicit matcher `<type>:<pattern> = <skill-name>`:
+
+- `<type>` is `label` (matched against a whole issue or task label; multi-word labels are fine) or `title` (an extended regex tested against the task title and body).
+- Whitespace around `:` and `=` is optional. The pattern may contain `:` but never `=`.
+- Matchers must be unambiguous: if two matchers resolve to different skills for the same task, the pipeline logs `(ambiguous)` and injects nothing. Keep patterns disjoint.
+- Omitting the section is a valid no-op. Never invent matchers to fill it.
+
+**Consumer** (automate, blueprint `auto-develop-template.md` `resolve_skill`):
+
+- `SKILL_MAP=()` holds the matchers from AGENTS.md plus any entries the operator authored locally with explicit approval (marked as local in the sign-off). Empty is fully functional.
+- `resolve_skill` runs once per task, before implementation, and sets `RESOLVED_SKILL` and `RESOLVED_SKILL_REASON`. It touches no filesystem, registry, or network and performs no semantic search.
+- Exactly one distinct match is chosen. More than one distinct match is `(ambiguous)` and nothing is injected. Zero matches is `(none)`. An invalid `title:` regex is logged as an invalid-policy warning, never silently skipped.
+- Every decision is written to `$LOGDIR/<task>/skill-resolution.log` as `searched`, `candidates`, `chosen`, `reason`.
+- The result is injected only into the implement, fix, and refactor prompts. Reviewers, check-fix, and the memory step stay skill-neutral.
+- On label-less task sources (local task list, `MEMORY.md` "Next Up") only `title:` matchers can resolve.
+
+## 5. Test discipline
+
+**Producer** (govern, blueprints `agents-template.md` *Test discipline*, `claude-template.md` *Development Commands*):
+
+- AGENTS.md *Auto-Develop Policy*: `TEST_POLICY` is `off`, `preferred`, or `required`; `TEST_ELIGIBILITY` is one matcher per line in the form `<type>:<pattern>=<include|except>` with the same `label:` / `title:` types as section 4.
+- CLAUDE.md *Development Commands*: `TARGETED_TEST_CMD` with a literal `{TARGET}` token (for example `pytest {TARGET}`). Include it only when `TEST_POLICY` is not `off`.
+- Omitting all fields keeps the gate `off`; that is the backward-compatible default, not a gap.
+
+**Consumer** (automate, blueprint `auto-develop-template.md` `resolve_test_policy`, `run_targeted_test_gate`):
+
+- Eligibility resolves once per task, logged to `test-policy.log`, with the same discipline as skill resolution and no "ambiguous" outcome: `except` wins over `include`; then an `include` match is eligible; otherwise the base default follows the declared, well-formed matchers (allowlist when usable `include` matchers exist, denylist when only usable `except` matchers exist). A dead matcher (unknown type, invalid regex, malformed entry) is warned and never arms the denylist base. An empty or inert set fails safe to `off` with a warning; it never falls through to "test every task". Wiring is task-source-general; on label-less sources only `title:` matchers can match.
+- The gate proves a red-to-green transition for exactly one designated test: the model authors the test before implementation, `expect_red` must return non-zero, and the same target is rerun after implementation. The RED-confirmed target is frozen in `FROZEN_TARGETED_TEST_TARGET` for the rest of the task. `TARGETED_TEST_FILE`, `FROZEN_TARGETED_TEST_TARGET`, and `TEST_GATE_ACTIVE` are reset at the top of every task in every variant.
+- The hard, blocking gate (`TEST_GATE_ACTIVE`, enforced by `ensure_checks_pass`) is armed only under `required`: an unprovable RED fails the task and a still-red target blocks. Under `preferred` the rerun still happens, but an unresolved failure is advisory; `preferred` never hard-blocks, never discards correctness work, and never triggers extra code mutation when ordinary checks are green.
+- Review enforcement is asymmetric: `required` missing tests are blocking numbered findings; `preferred` missing tests use the non-blocking `ADVISORY:` channel (a leading `LGTM` followed by `ADVISORY:` lines still passes).
+- The model-authored `{TARGET}` is sanitised against the allowlist `^[][A-Za-z0-9_./:@=+#-]+$` before substitution into the command, which runs via `bash -c`, never `eval`.
+- Honest scope: this is a targeted TDD gate, not a no-regression gate. A non-zero RED is not exit-verified as an assertion failure (no framework exit-code parsing). Regression coverage is whatever `CHECKS[]` runs.
+
+## 6. Field table
+
+| Field | File and section | Status | When absent | When partial or contradictory |
+|---|---|---|---|---|
+| *Skill Policy* | AGENTS.md | optional | `SKILL_MAP=()`, valid no-op | malformed matcher, unknown type, `=` in pattern, or overlapping matchers: `[GOVERNANCE DRIFT]` in audit; at runtime `(ambiguous)` injects nothing. `label:` matchers on a label-less source: `[GOVERNANCE DRIFT]` |
+| `TEST_POLICY` | AGENTS.md *Auto-Develop Policy* | optional | `off` | unknown value: `[NEEDS GOVERNANCE]` |
+| `TEST_ELIGIBILITY` | AGENTS.md *Auto-Develop Policy* | required when `TEST_POLICY` is not `off` | with policy set: inert, so `off` plus warning and `[NEEDS GOVERNANCE]` | dead matchers warned; `label:` on a label-less source: `[GOVERNANCE DRIFT]` |
+| `TARGETED_TEST_CMD` | CLAUDE.md *Development Commands* | required when `TEST_POLICY=required` | `required` degrades to `preferred` with a logged `[GOVERNANCE DRIFT]` | present while policy is `off` or absent: `[NEEDS GOVERNANCE]`; missing `{TARGET}` token: `[GOVERNANCE DRIFT]` |
+| *Update Rules* (M1 to M5) | MEMORY.md, AGENTS.md *Auto-Develop Policy* | required for automate | `[NEEDS GOVERNANCE]`, switch to govern | any rule contradicted by the script: memory-rule drift |
+| *Development Commands* | CLAUDE.md | required source of `CHECKS[]` | `CHECKS=()`, valid no-op; `# planned` commands are not runnable and are excluded | script runs a command not in CLAUDE.md, or misses one: stale-checks drift |
+| *Roles* and models | AGENTS.md, CLAUDE.md | suggested default only | user is asked in automate Step 3 regardless | user's pick differs: `[GOVERNANCE DRIFT]`, corrected through govern, never overridden in the script |
+| Git conventions | AGENTS.md | required for automate | `[NEEDS GOVERNANCE]` or `[USER DECISION REQUIRED]` | diverged: convention drift |
+| *Phase Plan* | AGENTS.md | source of the backlog | task source is scaffolded empty and `[USER DECISION REQUIRED]` is raised | n/a |

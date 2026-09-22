@@ -1,0 +1,4 @@
+.claude/settings.local.json
+*.skill
+*.zip
+skills-lock.json
