@@ -102,7 +102,7 @@ This task is test-eligible under `TEST_POLICY=<RESOLVED_TEST_POLICY>` (reason: <
 - End with: `FINDINGS: <count>` (count blocking findings only; advisories do not count)
 ```
 
-The script treats a leading `LGTM` as a pass (`grep -qi "^LGTM"`), so `LGTM` followed by `ADVISORY:` lines still passes — this is the **non-blocking channel** that keeps `preferred` from collapsing into `required`. Anything in the numbered list blocks. Keep that contract.
+The script passes a review only when the reply's first decisive line (the first line that is either an `LGTM` verdict or a numbered finding) is `LGTM`, so `LGTM` followed by `ADVISORY:` lines still passes — this is the **non-blocking channel** that keeps `preferred` from collapsing into `required`. Anything in the numbered list blocks. Keep that contract.
 
 ## 3. build_fix_prompt(issue, title, body, findings_a, findings_b, round, outfile)
 

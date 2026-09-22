@@ -9,6 +9,27 @@ heading and bump the contract version stated in that file.
 
 ## [Unreleased]
 
+### Fixed
+- `references/auto-develop-template.md`: three runtime defects inherited unchanged from
+  `governance-to-automation` 1.2.2. They share one cause: bash suspends `set -e` inside a function
+  called from an `&& ... ||` list, which the template relied on.
+  - A failed checkpoint commit, final amend, push, or PR creation fell through to "Done" and was
+    counted as a completed issue; a failed checkpoint additionally let the refactor revert land on
+    the base tip and discard the approved correctness work. Each step now carries an explicit guard
+    that logs, keeps the committed issue branch where one exists, returns to the base branch, and
+    fails the issue.
+  - `run_review` accepted any line starting with `LGTM` anywhere in the reviewer output and ignored
+    the runner's exit status, so a rejection such as "1. HIGH ..." followed by "LGTM must not be
+    granted" passed. It now requires a successful runner and decides on the first decisive line (the
+    first `LGTM` verdict or numbered finding), which also tolerates CLI preamble.
+  - `check_dependencies` treated an unreadable issue body (failed `gh` call) as "no dependencies" and
+    let the task through. It now fails closed and reports the task as blocked.
+- `references/prompt-builders.md`: the description of the pass rule matches the new check.
+
+The fixture `examples/auto-develop.payload-sample.sh` is a pre-refactor snapshot and is intentionally
+not re-synced; it still shows the origin behaviour. The contract (`references/contract.md`) is
+unchanged.
+
 ## [1.0.0] - 2026-09-22
 
 First release of the **prd-to-automation** skill: one Claude Code skill with the modes govern,

@@ -285,8 +285,9 @@ stage_repo_changes() { git add -A; git reset -q -- "$LOGDIR" >/dev/null 2>&1 || 
 # Abort helper for the per-issue failure paths: DISCARD any in-progress work, then return
 # to BASE_BRANCH. A bare `git checkout "$orig"` is unsafe — half-written impl/fix changes
 # either block the checkout or get carried onto the base branch, tripping the next run's
-# clean-worktree guard. All callers run BEFORE the correctness checkpoint commit, so HEAD
-# is still at the base tip and `reset --hard` only drops uncommitted work. `clean` excludes
+# clean-worktree guard. Before the correctness checkpoint commit HEAD is still at the base
+# tip, so `reset --hard` only drops uncommitted work; callers after the checkpoint (failed
+# amend/push/PR) keep the committed issue branch and only drop leftovers. `clean` excludes
 # $LOGDIR explicitly so this issue's freshly written FAILURE logs survive for debugging even
 # if the operator never gitignored logs/ (don't rely on the gitignore for that).
 return_to_base() {
@@ -316,8 +317,12 @@ ensure_logdir() { local d="$LOGDIR/$1"; mkdir -p "$d"; echo "$d"; }
 issue_has_label() {  # <n>
   [[ "$(gh issue view "$1" --json labels \
     --jq '[.labels[].name]|map(select(.=="{{TASK_LABEL}}"))|length')" -gt 0 ]]; }
-check_dependencies() {  # <n> -> non-zero if any "Depends on #N" is still open
-  local body deps; body="$(gh issue view "$1" --json body --jq '.body')"
+check_dependencies() {  # <n> -> non-zero if any "Depends on #N" is still open OR unverifiable
+  local body deps
+  # Fail CLOSED: the call site runs this inside `|| { ...; continue; }`, where bash suspends
+  # `set -e`, so a failed `gh` call must be checked explicitly. Otherwise an unreadable body
+  # silently means "no dependencies" and the Depends-on gate is bypassed.
+  body="$(gh issue view "$1" --json body --jq '.body')"     || { log "Cannot read #$1 (gh failed); treating it as blocked."; return 1; }
   deps="$(echo "$body" | grep -oiE 'depends on #[0-9]+' | grep -oE '[0-9]+' || true)"
   for d in $deps; do
     [[ "$(gh issue view "$d" --json state --jq '.state')" != "CLOSED" ]] && \
@@ -621,8 +626,12 @@ run_review() {  # <label> <runner_fn> <issue> <title> <body> <logfile> <logdir>
   local diff; diff="$(code_diff 2>/dev/null || true)"
   [[ -z "$diff" ]] && { echo "LGTM (no changes)" > "$6"; return 0; }
   build_review_prompt "$1" "$3" "$4" "$5" "$diff" "$7/prompt-review.txt"
-  "$2" "$7/prompt-review.txt" > "$6" 2>&1
-  grep -qi "^LGTM" "$6"; }   # LGTM = pass
+  "$2" "$7/prompt-review.txt" > "$6" 2>&1     || { echo "REVIEWER FAILED: runner exited non-zero; not a pass." >> "$6"; return 1; }
+  # Pass only when the FIRST decisive line is LGTM. Runner output may carry CLI preamble
+  # (stderr is merged), so skip to the first line that is either an LGTM verdict or a
+  # numbered finding ("1." / "1)"). A rejection whose later prose starts with "LGTM"
+  # (e.g. "LGTM must not be granted") therefore no longer counts as approval.
+  grep -m1 -iE '^(LGTM|[0-9]+[.)])' "$6" | grep -qi '^LGTM'; }   # LGTM = pass
 
 # --- Review-until-pass: A/B review + fix loop with no-op detection.
 #     Reused for BOTH the correctness pass and the refactor re-validation.
@@ -774,7 +783,11 @@ process_issue() {  # <issue>
   #     "implemented" commit + PR. No code change => nothing was built => skip the issue.
   [[ -n "$(code_diff)" ]] || { log "No code changes for #$issue (only MEMORY.md/logs)."; return_to_base; return 1; }
   stage_repo_changes
-  git commit -m "feat: implement #$issue - $title (correctness)" >/dev/null
+  # Explicit guard: process_issue runs inside `&& ... ||` at the call site, where bash suspends
+  # `set -e` for the whole function body. Without it a failed checkpoint (hook, signing,
+  # identity) would let refactor_stage `reset --hard HEAD` onto the BASE tip and discard the
+  # approved correctness work.
+  git commit -m "feat: implement #$issue - $title (correctness)" >/dev/null     || { log "ERROR: checkpoint commit failed for #$issue; discarding and skipping."; return_to_base; return 1; }
 
   # 3b. Refactor stage: simplify to senior quality on top of the checkpoint, re-validated
   #     by A/B. Reverts any round that is not cleanly approved; never fails the issue.
@@ -799,9 +812,11 @@ Automated via auto-develop.sh. Model plan: $IMPL_LABEL | $REVIEW_A_LABEL${REVIEW
 Correctness review rounds: $review_rounds/$MAX_ROUNDS (delivered A/B rounds incl. accepted refactor re-reviews: $DELIVERED_REVIEW_ROUNDS)
 Refactor pass: $refactor_summary
 
-Closes #$issue" >/dev/null
-  git push -u origin "$branch"
-  gh pr create --title "#$issue: $title" --body "Closes #$issue. Logs: \`$logdir/\`"
+Closes #$issue" >/dev/null     || { log "ERROR: final commit --amend failed for #$issue; checkpoint kept on $branch."; return_to_base; return 1; }
+  # Same `set -e` caveat: a failed push or PR must not fall through to "Done" and be counted
+  # as completed. Everything is committed on the issue branch, which is kept for manual handling.
+  git push -u origin "$branch"     || { log "ERROR: push failed for #$issue; branch $branch kept locally."; return_to_base; return 1; }
+  gh pr create --title "#$issue: $title" --body "Closes #$issue. Logs: \`$logdir/\`"     || { log "ERROR: PR creation failed for #$issue; branch $branch is pushed, open the PR manually."; return_to_base; return 1; }
   # Return to BASE_BRANCH so the NEXT issue branches from a clean base rather than stacking
   # on this still-unmerged branch. Safe: everything is committed at this point.
   git checkout "$BASE_BRANCH" >/dev/null 2>&1 || log "WARN: could not return to $BASE_BRANCH"
@@ -834,6 +849,8 @@ for issue in "${CANDIDATES[@]}"; do
   [[ "$COMPLETED" -ge "$MAX_ISSUES" ]] && break
   check_dependencies "$issue" || { log "Skip #$issue (deps open)."; continue; }
   if [[ "$DRY_RUN" == true ]]; then log "[dry-run] would process #$issue"; COMPLETED=$((COMPLETED+1)); continue; fi
+  # NOTE: inside this `&& ... ||` list bash suspends `set -e` for the whole process_issue body,
+  # so every critical step in process_issue carries its own `|| { ...; return 1; }` guard.
   process_issue "$issue" && COMPLETED=$((COMPLETED+1)) || log "#$issue produced no changes/failed."
 done
 log "Done. Completed $COMPLETED issue(s)."
@@ -842,6 +859,7 @@ log "Done. Completed $COMPLETED issue(s)."
 ## Generation rules
 
 - **Keep the guards.** `require_clean_worktree`, dependency blocking, and the `return_to_base` rollback on failure are what make the loop safe to re-run. The rollback must **discard** in-progress work (`git reset --hard` + `git clean -fd -e "$LOGDIR"`, which keeps this issue's freshly written failure logs) before switching back, never a bare `git checkout "$orig"` — a half-written impl/fix would otherwise block the checkout or follow onto the base branch and trip the next run's clean-worktree guard.
+- **Keep the explicit failure guards.** Bash suspends `set -e` inside `process_issue` and `check_dependencies` because the main loop calls them from `&& ... ||` lists. The checkpoint commit, the final amend, `git push`, and `gh pr create` therefore each carry an explicit `|| { log ...; return_to_base; return 1; }`, `check_dependencies` fails closed when `gh` cannot read the issue, and `run_review` requires a successful runner plus an `LGTM` on the first decisive line. Do not generate a script that relies on `set -e` for these steps.
 - **Branch from the base branch, and return to it after every issue.** `create_issue_branch` must start each new issue from `{{BASE_BRANCH}}` (`git checkout -b "$b" "$BASE_BRANCH"`), and the success path must `git checkout "$BASE_BRANCH"` after opening the PR. Otherwise, in a `--max-issues > 1` run, issue N branches off issue N-1's still-unmerged tip and its review diff includes the previous issue's code.
 - **Gate the correctness commit on a non-empty CODE diff**, not on `has_repo_changes_outside_logs`. `run_review` auto-approves an empty `code_diff`, so a model that only rewrote the `{{MEMORY_FILE}}` "Next Up" line would otherwise pass review and produce a memory-only "implemented" commit + PR. Use `[[ -n "$(code_diff)" ]]` (excludes `{{MEMORY_FILE}}`/logs) as the checkpoint guard — no code change means nothing was built.
 - **Review/no-op diffs must include new files.** Build every review diff and no-op hash from a *staged* diff (`stage_for_diff` + `git diff --cached <base>`), never plain `git diff <base>` — the latter omits untracked files, so a brand-new implementation file would be reviewed as an empty diff and silently approved. Use the `code_diff` / `code_hash` helpers everywhere a code diff is needed.
