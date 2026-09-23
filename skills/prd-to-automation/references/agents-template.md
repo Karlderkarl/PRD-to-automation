@@ -58,6 +58,17 @@ scripts/
 5. Run validation before handoff: {e.g., `pnpm type-check`, `pnpm lint`}.
 6. Update `MEMORY.md` after major decisions, completed phases, or newly discovered blockers.
 
+## Conflict Resolution
+
+When the PRD, the governance files, and the repository disagree, this order decides:
+
+1. {e.g., Explicit user instruction}
+2. {e.g., Current, working repository reality}
+3. {e.g., PRD intent}
+4. {e.g., Template defaults}
+
+A conflict that is strategic rather than factual is not settled by this order: stop and ask the user. Record the resolved conflict in `MEMORY.md` *Governance Drift*.
+
 ## Review Rules
 
 Reviewer passes are read-only by default (no file edits). The user may explicitly grant write access on a case-by-case basis.

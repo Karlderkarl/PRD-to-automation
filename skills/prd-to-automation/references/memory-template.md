@@ -92,7 +92,7 @@ When this file changes:
 
 ### Archive Strategy
 
-Use the archive reference by default, even for small projects. The archive may stay short at first, but it keeps the MEMORY.md structure stable and becomes critical for projects with more than ~20 completed tasks, where MEMORY.md can exceed typical context injection limits (default: 20,000 characters).
+Use the archive reference by default, even for small projects. The archive may stay short at first, but it keeps the MEMORY.md structure stable and becomes critical for projects with more than ~20 completed tasks, where MEMORY.md would otherwise outgrow the skill's budget of about 15,000 characters. `CLAUDE.md` imports MEMORY.md into every session, so its size is paid for on every turn.
 
 - `memory/completed-phases.md` — detailed issue-level entries, organized by phase
 - MEMORY.md — only current state, open decisions, next steps, infrastructure

@@ -29,7 +29,7 @@ What to pull from each governance file to parameterize `auto-develop.sh`. Work t
 - [ ] **Development Commands** → `{{CHECK_CMDS[]}}` in order; `# planned` commands are excluded (not yet runnable → bootstrap first, then govern removes the marker and automate Sync re-wires the checks)
 - [ ] **Targeted single-test command** → `{{TARGETED_TEST_CMD}}` from the line `TARGETED_TEST_CMD='<command>'`, with a literal, unquoted `{TARGET}` token (a line marked `# planned` counts as absent), used by the deterministic test gate and local validation. If AGENTS.md sets `TEST_POLICY=required` but this command is missing, that is `[GOVERNANCE DRIFT]` and the generated automation must degrade enforcement to `preferred`.
 - [ ] **Tool preferences** → which CLIs/runners the script can use (`gh`, package manager, `claude`, `codex`, CI wrapper, etc.)
-- [ ] **Roles** → confirm they match AGENTS.md; mismatch = `[GOVERNANCE DRIFT]`
+- [ ] **Roles** → confirm they match AGENTS.md; mismatch = `[GOVERNANCE DRIFT]`. A generic name ("Claude") matches any model of that provider, a concrete one ("opus") only itself (`references/contract.md` section 6)
 - [ ] **Environment variables** → what the script must export or require; never hardcode secret values
 - [ ] **Review boundary** → must stay in sync with AGENTS.md review roles
 - [ ] **Operational guidance** → whether governance already implies detached execution expectations (`tmux`, runner host, CI, log paths)

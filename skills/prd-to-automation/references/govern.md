@@ -154,6 +154,7 @@ Always ask these questions unless they were already answered clearly:
 
 10. **Conflict resolution policy**: If PRD, governance, and codebase disagree, should the repo reality, PRD intent, or explicit user instruction win?
    - Default suggestion: user instruction > current working codebase > PRD > templates
+   - Record the answer in AGENTS.md *Conflict Resolution*; the Update/merge strategy (Step 10) follows it
 
 Present the interview as a concise checklist, not a wall of text.
 
@@ -192,7 +193,7 @@ Read `references/agents-template.md` for the structural blueprint. If the file i
 3. **Repository Boundary** - stay inside project root, protected files list
 4. **Current Reality** - honest statement of what exists vs what is planned (durable facts; volatile state points to MEMORY.md, `references/contract.md` section 3)
 5. **Intended Project Structure** - target directory tree if known
-6. **Workflow** - numbered steps from reading the task to delivery
+6. **Workflow** - numbered steps from reading the task to delivery, followed by **Conflict Resolution** - the precedence order from interview question 10
 7. **Review Rules** - what reviewers check, read-only default, minimum checklist
 8. **Git Conventions** - branch naming, commit format, force-push policy
 9. **Prohibited Actions** - filesystem, git, system, and security prohibitions
@@ -271,7 +272,7 @@ When governance files already exist, do not jump straight to rewriting them. Run
 
 ### Step 10: Merge Strategy
 
-When "Update/merge" is chosen, use this conflict resolution strategy:
+When "Update/merge" is chosen, use the precedence order in AGENTS.md *Conflict Resolution*; if the section is missing (governance from an older version), use this default:
 
 - **Explicit user instruction** wins over everything else
 - **Current, working repository reality** outranks a stale PRD

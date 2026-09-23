@@ -33,6 +33,7 @@ Report a root cause once. When several findings follow from one open user decisi
 Good audit targets include:
 
 - role mismatches between `AGENTS.md` and `CLAUDE.md`
+- AGENTS.md without a *Conflict Resolution* order (Advisory: govern then uses its default order; governance from before 1.2.0 has none)
 - commands in `CLAUDE.md` that the project's build files or toolchain do not provide, excluding commands marked `# planned` (`references/contract.md` section 6)
 - `# planned` markers that are stale because the tool now exists (the pipeline still skips those commands)
 - a `TARGETED_TEST_CMD` whose tool is not installed and that is not marked `# planned` (`references/contract.md` section 6)
@@ -41,7 +42,7 @@ Good audit targets include:
 - phase plans that no longer reflect repository reality
 - stack declarations in `SOUL.md` that the repo contradicts
 - `MEMORY.md` current state or next steps that are stale
-- MEMORY.md exceeding ~15,000 characters, a buffer below the ~20,000-character context injection limit (suggest archive split)
+- MEMORY.md exceeding ~15,000 characters, the skill's own budget (`references/contract.md` section 3; suggest archive split)
 - MEMORY.md containing inline completed issue entries instead of only the archive reference
 - `memory/completed-phases.md` missing despite a MEMORY.md archive reference
 - For projects wired to the automate mode, governance-side coherence of the automation contracts (`references/contract.md` sections 4 to 6):

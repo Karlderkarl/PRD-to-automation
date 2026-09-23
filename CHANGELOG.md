@@ -24,6 +24,13 @@ reviewers were read-only only by instruction.
   local `#N`.
 - Section 4 states that a `title:` regex is tested against title, newline, and body, so `^` anchors
   the title and `$` the end of the body (clarification, no behaviour change).
+- Section 3 no longer cites a "~20,000-character context injection limit", which no Claude Code
+  documentation backs; the 15,000-character threshold for `MEMORY.md` is named as the skill's own
+  budget (it is imported into every session). The same wording is fixed in `audit.md` and
+  `memory-template.md`.
+- Field table: a generic model name in governance ("Claude", "Codex") covers every model of that
+  provider, so picking `opus` where governance says "Claude" is not drift; only a different
+  provider, or a different model than a concrete name, is.
 
 ### Added
 - `references/prompt-builders.md`: a bash blueprint for all seven prompt builders, inserted
@@ -38,6 +45,9 @@ reviewers were read-only only by instruction.
   message while it is off.
 
 ### Changed
+- The conflict-resolution order asked in govern's interview (question 10) now has a home: AGENTS.md
+  *Conflict Resolution* (`agents-template.md`), which govern's Update/merge strategy follows; audit
+  notes its absence as Advisory.
 - `run_review` compares a hash of the whole tree (`git write-tree`, `MEMORY.md` included) before and
   after each reviewer; before, a reviewer's edit to `MEMORY.md` went unnoticed.
 - The review prompt states one output format, and the pass rule matches it: `LGTM` alone (optionally
