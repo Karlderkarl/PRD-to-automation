@@ -4,6 +4,8 @@ Release blocker: every rule below must have a location. A rule with no location 
 
 1.0.0 additionally fixes runtime defects of the origin pipeline template and adds two template rules (CHANGELOG, *Fixed* and *Changed*); no origin rule was dropped or weakened, so every row below still holds.
 
+1.1.0 tightens rules and fixes further defects (CHANGELOG 1.1.0, contract 1.1.0). No row lost its location. Two rows changed meaning and say so: A21 and R27 (automate additionally writes one archive entry and, when drift is open, one *Governance Drift* line; the origin already sent the detail to the archive, 1.1.0 makes the boundary say it), and A4/A26 (a user's deliberate model or task-source pick is generated as chosen and recorded as open drift for govern, instead of stopping generation).
+
 Sources: `prd-to-governance` 1.2.0 `SKILL.md` "Quality Checklist" (P1 to P15), `governance-to-automation` 1.2.2 `SKILL.md` "Quality checklist" (A1 to A26), and the Critical invariants of PRD section 4.4 (R14 to R27). Paths are relative to `skills/prd-to-automation/`, except `SECURITY.md` and `examples/`, which sit at the repository root.
 
 ## prd-to-governance 1.2.0, Quality Checklist
@@ -62,7 +64,7 @@ Other `prd-to-governance` sections that are not checklist items:
 | A18 | `TEST_POLICY=required` needs `TARGETED_TEST_CMD`; otherwise degrade to `preferred` with `[GOVERNANCE DRIFT]` | `references/contract.md` section 6; `references/automate.md` Step 1 and checklist item 18; `references/audit.md` Parts A and B |
 | A19 | Refactor pass only after the committed checkpoint, via shared `review_until_pass`, kept only on a clean re-review, bounded by no-op detection and `MAX_REFACTOR_ROUNDS` | `references/automate.md` "Two-pass pipeline", Step 4, checklist item 19; `references/audit.md` Part B safety |
 | A20 | Metadata reflects real history: delivered A/B rounds; correctness fixes and refactor rounds distinct | `references/automate.md` "Two-pass pipeline" and checklist item 20; `references/contract.md` M3 |
-| A21 | `SOUL.md`, `AGENTS.md`, `CLAUDE.md` not edited; only `MEMORY.md` plus artifacts changed | `SKILL.md` boundaries; `references/automate.md` "Governance is the contract" and checklist item 21; `references/contract.md` section 3 (generation-time scope and M7) |
+| A21 | `SOUL.md`, `AGENTS.md`, `CLAUDE.md` not edited; only `MEMORY.md` plus artifacts changed (since 1.1.0 also one archive entry) | `SKILL.md` boundaries; `references/automate.md` "Governance is the contract" and checklist item 21; `references/contract.md` section 3 (generation-time scope and M7) |
 | A22 | Prompts instruct agents to read the governance and do not duplicate large governance text | `SKILL.md` boundaries ("link, don't duplicate"); `references/automate.md` Step 4 and checklist item 22; `references/prompt-builders.md` |
 | A23 | Privileged flags off by default, only via `--unattended` / `--auto-merge` behind `confirm_privileged_mode`; tmux re-exec propagates opt-in plus `--yes` | `SKILL.md` boundaries; `references/automate.md` Step 3 item 4 and checklist item 23; `references/auto-develop-template.md`; `references/audit.md` Part B safety; `SECURITY.md` |
 | A24 | Script passed `bash -n` (and `shellcheck`); `--dry-run` offered | `references/automate.md` Step 6 and checklist item 24; `references/audit.md` Part C |
@@ -103,4 +105,4 @@ Other `governance-to-automation` sections that are not checklist items:
 | R24 | Privileged modes off; only via `--unattended` / `--auto-merge` behind `confirm_privileged_mode`; never defaults, not in fixtures | `SKILL.md` boundaries; `references/automate.md` Step 3 item 4; `references/auto-develop-template.md`; `examples/`; `SECURITY.md` |
 | R25 | No assumed toolchain; `CHECKS=()` verbatim from `CLAUDE.md`; empty is a valid no-op | `SKILL.md` boundaries; `references/contract.md` section 6; `references/automate.md` Step 1 and "Any stack?" |
 | R26 | Refactor pass only after the committed checkpoint, via `review_until_pass`, kept only on clean re-review, `--no-refactor`, `MAX_REFACTOR_ROUNDS` | `references/automate.md` "Two-pass pipeline" and checklist item 19 |
-| R27 | Automation writes only `MEMORY.md` and generated artifacts; generation never runs the real loop | `SKILL.md` boundaries; `references/contract.md` section 3 (generation-time scope); `references/automate.md` Step 6 and checklist item 21 |
+| R27 | Automation writes only `MEMORY.md` and generated artifacts (since 1.1.0 also one archive entry); generation never runs the real loop | `SKILL.md` boundaries; `references/contract.md` section 3 (generation-time scope); `references/automate.md` Step 6 and checklist item 21 |

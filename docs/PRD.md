@@ -198,6 +198,8 @@ Phasen 3 bis 5 sind voneinander unabhängig, sobald Phase 2 steht.
 - `[USER DECISION REQUIRED]` Die Modus-Referenzen behalten in 1.0.0 die vollständigen Checklisten der Ursprungsskills. Kürzen ist Aufgabe einer späteren Version, nachdem der Nachweis in `docs/parity.md` steht. Annahme: ja.
 - **Entschieden am 2026-09-22 (Abweichung von R6 bis R8 und Kriterium 5):** Die in drei unabhängigen Reviews und einem Verhaltenstest nachgewiesenen Laufzeitfehler des Ursprungs-Templates und die zwei Template-Widersprüche (Rollback-Verbot gegen Pipeline-Rollback; sofort veraltete Statussätze) werden bereits in 1.0.0 behoben. Die Abweichungen stehen im CHANGELOG unter "Fixed" und "Changed"; keine Ursprungsregel entfällt (`docs/parity.md`).
 
+- **Entschieden am 2026-09-23 (Version 1.1.0, Vertrag 1.1.0):** Ein Review mit End-to-End-Test (govern, automate, audit auf einem Testprojekt) und eine statische Prüfung des Templates fanden weitere Laufzeitfehler, Widersprüche zwischen den Modus-Referenzen und zu weite Regeln im Testgate. Sie werden in 1.1.0 behoben; die Vertragsänderungen stehen im CHANGELOG unter "Contract". Der sichere Standard `--permission-mode default` bleibt; statt ihn zu ändern, bekommt jede Betriebsanleitung einen Hinweis auf die Tool-Allowlist für kopflose Läufe.
+
 ## 7. Akzeptanzkriterien
 
 1. `npx skills add Karlderkarl/governance-pipeline` installiert genau einen Skill, und das Frontmatter besteht die Validierung.

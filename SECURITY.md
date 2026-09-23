@@ -25,7 +25,9 @@ itself performs no privileged operations. Of particular interest:
   safe-by-default policy and must not be run in this repo.
 - The generated targeted-test gate substitutes a **model-authored** `{TARGET}` value into a command
   run via `bash -c` (not `eval`). The template sanitizes it against a strict allowlist
-  (`^[][A-Za-z0-9_./:@=+#-]+$`) before substitution, rejecting any shell metacharacters. Patterns
+  (`^[][A-Za-z0-9_./:@=+#-]+$`), rejects a value starting with `-` or `#`, and substitutes it
+  shell-quoted (`printf %q`), so neither shell metacharacters nor a comment, option, or glob
+  reach the shell. Patterns
   that would weaken that sanitization, or otherwise let model-authored input reach a shell
   unescaped, are in scope.
 
@@ -41,8 +43,8 @@ mitigated, not an exploitable issue:
   stack-agnostic pipeline must run arbitrary command strings (`a | b`, `cd x && y`) verbatim. This
   input is trusted by construction.
 - The targeted-test gate runs a command built from a **model-authored** `{TARGET}`, but that value
-  is sanitized against a strict allowlist (`^[][A-Za-z0-9_./:@=+#-]+$`) **before** substitution (see
-  *Scope* above), so no shell metacharacters can reach the shell.
+  is sanitized against a strict allowlist (`^[][A-Za-z0-9_./:@=+#-]+$`) and shell-quoted **before**
+  substitution (see *Scope* above), so no shell metacharacters can reach the shell.
 
 Reports that demonstrate a way *past* the `{TARGET}` allowlist, or that the `CHECKS[]` input can be
 influenced by an untrusted party, are in scope and welcome. A generic "runs a shell command" scanner
@@ -54,4 +56,5 @@ The latest release is supported.
 
 | Version | Supported |
 |---|---|
-| 1.0.x | ✅ |
+| 1.1.x | ✅ |
+| 1.0.x | ❌ |

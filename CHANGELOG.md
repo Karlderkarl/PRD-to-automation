@@ -9,6 +9,114 @@ heading and bump the contract version stated in that file.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-23
+
+A review with an end-to-end test (govern, then automate with a local task list, then audit, on a
+sample Python project) and a static test harness for the pipeline template found further runtime
+defects, contradictions between the mode references, and test-gate rules that were too loose. All
+of them are fixed here; the decision is recorded in `docs/PRD.md` section 6. The safe permission
+default stays as it is; the skill now explains what it means for headless runs instead.
+
+### Contract
+- `references/contract.md` is now **contract version 1.1.0**.
+- `{TARGET}` must not start with `-` or `#` and is substituted shell-quoted (`printf %q`). Before,
+  `#` commented out the rest of the command (so `pytest #` ran the whole suite), a leading `-` was
+  read as an option, and `[`/`]` were glob-expanded. `{TARGET}` must stand unquoted in
+  `TARGETED_TEST_CMD`; the script dies at startup on a quoted one.
+- Exit status 126 or 127 (not executable, command not found) is never accepted as RED. Before, a
+  missing test runner produced "RED OK" and a GREEN that could never pass.
+- Test eligibility base default: any declared `include` matcher, even a dead one, keeps the
+  allowlist base; the denylist base needs only `except` matchers, at least one usable. Before, one
+  regex typo in an `include` turned testing on for almost every task. A `label:` matcher with an
+  empty pattern is dead.
+- New generator setting `TASK_SOURCE_HAS_LABELS`: on a local task list or MEMORY.md "Next Up"
+  every `label:` matcher (skill and test) is dead and warned at runtime.
+- `TARGETED_TEST_CMD` has a defined form (one line `TARGETED_TEST_CMD='<command>'` in the
+  *Development Commands* block) and may be marked `# planned`; a planned one counts as absent.
+- M7 is enforced at runtime: the pipeline checks before every commit that `SOUL.md`, `AGENTS.md`,
+  `CLAUDE.md` are unchanged and fails the task otherwise; a reviewer that changes the working tree
+  fails the task. The local task list's `status:` is flipped by the script, never by a model.
+- `resolve_skill` warns about and logs entries without `=`, with an empty skill name, or with an
+  unknown type, instead of skipping them silently.
+- automate's generation-time write scope names what the mode already did: the *Current State* line
+  and, when drift is open, one *Governance Drift* line in `MEMORY.md`, plus one entry in
+  `memory/completed-phases.md`. Open drift belongs in *Governance Drift*, never only in the archive.
+- govern writes M1 to M7 into AGENTS.md *Auto-Develop Policy* (and the status-line and archive
+  rules into MEMORY.md *Update Rules*); the section table said MEMORY.md, the template had neither.
+- Field table: a user's deliberate model or task-source pick is generated as chosen and recorded as
+  open drift; new row *Task source*.
+
+### Fixed
+- `references/auto-develop-template.md`:
+  - The tmux re-exec crashed for single-review projects (`REVIEW_B_MODEL: unbound variable`) and
+    ran a bare `$0`, which is not a command when the script was started as `bash auto-develop.sh`.
+    It now re-execs `bash <absolute path>`.
+  - A failing `gh issue list` read as "No eligible issues." with exit 0; it now dies.
+  - Without `--auto-merge` the base branch was never refreshed, so a dependency merged on GitHub
+    counted as done while its code was missing locally. `refresh_base` fast-forwards the base
+    before the run and before each issue (never forced; no upstream is a no-op).
+  - A branch with own commits (an earlier run failed after the checkpoint) was reused, which made
+    `required` tasks fail forever with NOT RED; an issue with an open PR was selected again on every
+    run. Both are now skipped as "awaiting review" with a log naming the branch.
+  - Started from a subdirectory, the review diff and the clean-worktree guard saw only part of the
+    tree. The script now `cd`s to the repository root.
+  - A crashed refactor runner was read as "converged"; it now reverts the round. A crashed
+    check-fix runner logs a warning.
+  - `--dry-run` counted "would process" as completed; it now says "Dry run: would process N".
+  - Flags without a value died with an unbound-variable error; `--issue N` did not check that the
+    issue is open; `--refactor` was missing from the usage text; `run_checks` leaked `cmd`.
+  - A generated script produced six shellcheck findings from template code (unused `*_RUNNER`
+    variables, two false positives). The runner variables now back a PATH preflight and are in the
+    placeholder legend; the false positives carry a targeted disable with the reason.
+  - The skeleton names the skill and contract version in a header comment, so audit can tell
+    scripts generated before 1.1.0.
+- `references/task-list-template.md`: the local task-list variant existed only as prose, and
+  `task_mark_status`, named in the template, was defined nowhere. It now has a bash blueprint
+  (parsing, selection, dependency check against the base branch, script-owned status flip,
+  awaiting-review skip) and one documented `depends on:` form. A dry run before the first commit
+  reads the uncommitted task file and says so, so automate's Step 6 can validate. The issue residue
+  to remove in this variant (`--auto-merge`, issue wording) is listed. `status: doing` is gone;
+  nothing wrote it.
+- `references/prompt-builders.md`: the memory prompt forbids flipping the task status.
+
+### Changed
+- `SKILL.md` and `references/govern.md`: a PRD in a documentation folder (`docs/PRD.md`, the
+  skill's own example) inside a git repository puts the project root at the repository top level.
+  Before, the rule made `docs/` the root.
+- `SKILL.md`: automate loads `references/audit.md` in Sync (it needs the drift classes); new
+  boundary on headless permissions.
+- `references/automate.md`:
+  - Two kinds of drift: blocking drift stops generation, a user's deliberate choice (model, task
+    source) is generated and recorded as open drift for govern. Before, the text said both "stop"
+    and "flag and continue".
+  - The approval to write is asked in Step 3, before Steps 4 to 6 write and validate the artifacts.
+    Before, Step 7 asked for approval after the files were already written and dry-run.
+  - The remaining model steps (test authoring, check-fix, refactor, memory) are shown with the model
+    they use.
+  - The run guide must explain the headless permission allowlist, committing before the first run,
+    that dependent tasks wait for a merge, and `*.sh eol=lf` on Windows.
+- `references/govern.md`: Steps 5 to 8 draft, Step 11 writes (`MEMORY.md` and the archive last, so
+  "Governance files drafted" is written with them); missing PRD items are marked only when relevant
+  to the project; asks for the eligibility label and flags GitHub Issues without a remote; no
+  default package manager outside Node; SOUL.md up to 90 lines instead of at least 60.
+- `references/audit.md`: one root cause is reported once (a task-source decision is not four drift
+  findings); the command check no longer flags `# planned` commands and no longer names
+  `package.json`; new targets for stale `# planned` markers, a `TARGETED_TEST_CMD` whose tool is
+  missing, markers inside binding rules, and a self-contradicting MEMORY.md; the dry-run check
+  covers untracked files and exercises dependency blocking; new safety and advisory findings for
+  the rules above.
+- `references/agents-template.md`: the *Auto-Develop Policy* example states M3 (archive, not
+  inline), M6, M7, the refactor pass, and single review; the MEMORY.md field list matches the
+  memory template.
+- `references/claude-template.md`: protects `CLAUDE.md` itself; shows the `TARGETED_TEST_CMD` line.
+- `references/memory-template.md`: *Update Rules* carry the status-line and archive rules and keep
+  open drift in *Governance Drift*; dropped the `memory_search` / `memory_get` tools, which Claude
+  Code does not have.
+- `references/extraction-checklist.md`: follows the new base-default and `TARGETED_TEST_CMD` rules;
+  the branch pattern comes from AGENTS.md; audit uses it too.
+- `README.md`: a section on permissions for headless runs; the first run commits before the dry
+  run. `SECURITY.md`: the `{TARGET}` quoting; 1.1.x is the supported line.
+
 ## [1.0.0] - 2026-09-22
 
 First release of the **prd-to-automation** skill: one Claude Code skill with the modes govern,
@@ -155,4 +263,5 @@ section 6. No origin rule was dropped (`docs/parity.md`).
 The fixture `examples/auto-develop.payload-sample.sh` is a pre-refactor snapshot and is intentionally
 not re-synced; it still shows the origin behaviour, including the defects fixed above.
 
+[1.1.0]: https://github.com/Karlderkarl/PRD-to-automation/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Karlderkarl/PRD-to-automation/releases/tag/v1.0.0

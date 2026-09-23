@@ -34,7 +34,24 @@ Without a named mode, the skill picks one from the situation (PRD but no governa
 
 1. **govern** reads the PRD, inspects the repository, interviews you on roles, git conventions, task source, and commands, then proposes the four files. Nothing is written before you approve per file.
 2. **automate** extracts checks, roles, conventions, and memory rules from the governance, asks you to choose the model for every pipeline step, wires exactly one task source, and generates `auto-develop.sh`. It validates the script but never runs the real loop.
-3. **Dry run** it yourself: `./auto-develop.sh --dry-run` (or `/prd-to-automation audit`) confirms task selection without executing models. Then `./auto-develop.sh --max-issues 1`.
+3. **Commit** the governance, the task source, and the script (the pipeline refuses to start on a dirty worktree).
+4. **Dry run** it yourself: `./auto-develop.sh --dry-run` (or `/prd-to-automation audit`) confirms task selection without executing models. Then `./auto-develop.sh --max-issues 1`.
+
+### Permissions for headless runs
+
+The pipeline calls `claude -p`, which cannot answer permission prompts. Under the safe default (`--permission-mode default`) every tool the implementer needs must be allowed up front, otherwise the implement and fix steps change nothing and each task ends with "no code changes". Allow them in the target project's `.claude/settings.json`, for example:
+
+```json
+{
+  "permissions": {
+    "allow": ["Edit", "Write", "Bash(pytest:*)", "Bash(ruff:*)"]
+  }
+}
+```
+
+or pass `--allowedTools` in the implementer's runner line. Scope the `Bash(...)` entries to the project's own check commands. `--unattended` switches to `bypassPermissions` behind a confirmation prompt; it is the explicit opt-in for fully unattended runs, not the fix for a missing allowlist. Reviewers run read-only.
+
+A dependent task waits until its dependency is merged into the base branch, so a batch run without `--auto-merge` processes independent tasks only.
 
 ## Repository layout
 
