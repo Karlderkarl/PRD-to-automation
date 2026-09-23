@@ -54,7 +54,7 @@ You are writing a FAILING test (test-first) for issue #<issue> for <PROJECT_NAME
 - Read SOUL.md, AGENTS.md and MEMORY.md first; follow the project's existing test conventions (framework, layout, naming). Do NOT invent a framework.
 - Write ONLY the test(s) that capture the behavior this issue requires. Do NOT implement the behavior itself, and do NOT touch unrelated code.
 - The test MUST fail now, and fail for the RIGHT reason — missing/incorrect behavior, NOT a syntax error, import error, or collection failure. A test that passes without the implementation is wrong here; make it assert the real expected behavior.
-- Write exactly ONE runnable target id/path for this test to `<TARGETED_TEST_FILE>` (first line only), in the form `<TARGETED_TEST_CMD>` expects for `{TARGET}` (e.g. a single test path/node id). Use only test-id/path characters — no shell metacharacters, spaces, or quotes.
+- Write exactly ONE runnable target id/path for this test to `<TARGETED_TEST_FILE>` (first line only), in the form `<TARGETED_TEST_CMD>` expects for `{TARGET}` (e.g. a single test path/node id). Use only test-id/path characters — no shell metacharacters, spaces, or quotes, and do not start it with `-` or `#`.
 - Do NOT modify SOUL.md, AGENTS.md, or CLAUDE.md. Do NOT update MEMORY.md here. Save all files. Do NOT commit.
 ```
 
@@ -199,8 +199,11 @@ Rules:
 - Read MEMORY.md's Update Rules first; MEMORY.md stays lean.
 - 1-2 lines max. Don't document review cycles or reviewer names.
 - Do NOT modify SOUL.md, AGENTS.md, or CLAUDE.md.
+- Do NOT edit the task list's `status:` field — the pipeline flips it after this step.
 - Do NOT commit — the pipeline folds these memory edits into the one issue commit.
 ```
+
+The status line in *Rules* is emitted only for the local task-list source: the script (`task_mark_status`) owns the `status: open → done` flip and runs it after this step, so it lands in the same commit; the model never writes it.
 
 ## 6. build_check_fix_prompt(issue, check_output, outfile)
 
@@ -226,5 +229,6 @@ The implementation for issue #<issue> has failing checks. Fix them.
 - `build_test_authoring_prompt` runs **before** implementation and only when a targeted gate is available (eligible task + `<TARGETED_TEST_CMD>`). It writes the test FIRST and must produce a RED target; this is what makes the post-impl gate a red→green *transition* check rather than a green-only smoke test. Once RED is confirmed, that exact target is frozen for the rest of the task and later prompts must not retarget it. The gate verifies only that the exit was non-zero, not *why* — so the prompt must demand an assertion-level failure (not a syntax/import/collection error); the script cannot enforce that across arbitrary frameworks. Under `preferred`, an unresolved targeted-test failure must stay advisory and must not trigger extra code mutation when the ordinary checks already pass. It never implements behavior and never writes MEMORY.md.
 - The review prompt must enforce the policy asymmetrically: `required` missing-tests are **blocking** numbered findings, but `preferred` missing-tests go to the non-blocking `ADVISORY:` channel (the script passes on a leading `LGTM` even with trailing `ADVISORY:` lines). Without that channel, `preferred` silently collapses into `required`.
 - Always include the single-status-line / overwrite / archive rules verbatim from the governance memory policy.
+- A local task list's `status:` field is script-owned (`task_mark_status` in `task-list-template.md`). No prompt asks the model to flip it; in that variant the memory prompt explicitly forbids it.
 - Keep `{{GOVERNANCE_REVIEW_FOCUS}}` short and regenerate it on Audit/Sync so reviewers never enforce stale rules.
 - Use heredocs to write prompts to temp files; never pass large prompts as CLI args.
