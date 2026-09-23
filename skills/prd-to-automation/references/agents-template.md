@@ -26,7 +26,7 @@ Stay inside the project root.
 
 - Do not read, write, or execute outside this repository.
 - Do not modify these governance files without explicit user instruction: `SOUL.md`, `AGENTS.md`, `CLAUDE.md`
-- `MEMORY.md` is the one exception: update it only for its defined status and history fields (Current State, Next Up, Completed Work reference, Key Decisions, Governance Drift). Do not restructure it or delete existing history.
+- `MEMORY.md` and its archive `memory/completed-phases.md` are the exception: update them only in their defined fields (Current State, Next Up, Completed Work reference, Key Decisions, Key Implementation Notes, Infrastructure, Governance Drift; completed-work details go to the archive). Do not restructure them or delete existing history.
 - {List any other protected/reference-only files, e.g.:}
 - {Treat `prd.md` and `setup-guide.md` as reference documents unless the user explicitly asks to edit them.}
 
@@ -131,13 +131,15 @@ When the project uses an automated issue-processing pipeline, add this section t
 
 `auto-develop.sh` is the automation entry point for issue-driven development. The following rules are binding for any automated issue processing:
 
-- Default automated flow: {implementation model} implements, {Reviewer A model} performs Reviewer A, and {Reviewer B model} performs Reviewer B.
-- Review diffs are generated with `git diff {base-branch} -- . ':!MEMORY.md'` to include uncommitted working-tree changes while excluding MEMORY.md (which bloats context across review cycles).
+- Default automated flow: {implementation model} implements, {Reviewer A model} performs Reviewer A{, and {Reviewer B model} performs Reviewer B - omit for single review}. After correctness review passes, a behaviour-preserving refactor pass runs and is re-reviewed the same way.
+- Review diffs are generated with `git diff {base-branch} -- . ':!MEMORY.md'` to include uncommitted working-tree changes while excluding MEMORY.md (which bloats context across review cycles) and the pipeline's log directory.
 - Only open issues with the label `{auto-label}` are eligible for processing.
 - `Depends on #N` in the issue body is a hard blocker. All referenced issues must be `CLOSED` before the dependent issue can be started.
 - Blocked issues are skipped silently; they do not cause the script to fail.
-- Implementation agents write ONE status line to MEMORY.md "Next Up" (overwrite, not append). The pipeline writes the final "Completed Work" entry after review passes.
+- The implement, fix, and refactor steps write ONE status line to MEMORY.md "Next Up" (overwrite, not append). Only the pipeline's post-review memory step writes the completed-work entry, to `memory/completed-phases.md`, never inline in MEMORY.md; it records correctness fix rounds and accepted refactor rounds separately.
 - If a fix cycle produces no code changes (only MEMORY.md/logs), remaining findings are treated as accepted deviations and the loop breaks.
+- The checkpoint commit requires a non-empty code diff (excluding MEMORY.md and logs); a memory-only run produces no commit and no PR.
+- At runtime the pipeline writes only application code and tests, MEMORY.md and the archive, its logs, and the task status. Agents never edit `SOUL.md`, `AGENTS.md`, or `CLAUDE.md` and never commit; the pipeline owns the commit and fails the task if a governance file changed. Reviewers are read-only.
 - Rollback exception: on a failed step the pipeline discards its own uncommitted work of the current task (`git reset --hard` + `git clean -fd`, keeping `logs/`) and returns to the base branch. This is the only permitted destructive git action; it never touches committed work, other branches, or the base branch.
 
 ### Test discipline
@@ -157,7 +159,8 @@ Key patterns this section codifies:
 - **MEMORY.md exclusion from diffs**: Prevents context overflow when status lines grow across fix cycles
 - **Status line discipline**: One line in "Next Up", overwritten not appended, prevents MEMORY.md bloat
 - **No-op fix detection**: Breaks infinite review loops when the implementation agent agrees with deviations
-- **Pipeline owns "Completed Work"**: A separate post-review step writes the final concise summary
+- **Pipeline owns "Completed Work"**: A separate post-review step writes the final concise summary to the archive
+- **Non-empty checkpoint** and **governance read-only at runtime**: rules M6 and M7 of the contract
 - **Test discipline (optional, fail-safe to `off`)**: `TEST_POLICY` is `off` | `preferred` | `required`. `preferred` reruns a targeted test after implementation but never blocks; `required` arms a deterministic red→green gate and needs a `TARGETED_TEST_CMD` in CLAUDE.md (without it the pipeline degrades to `preferred` and logs `[GOVERNANCE DRIFT]`). `TEST_ELIGIBILITY` matchers decide which tasks the gate covers: `except` wins over `include`; with only `include` matchers the base is "not eligible" (allowlist), with only `except` matchers it is "eligible" (denylist). A non-`off` policy with empty or inert eligibility is invalid (`[NEEDS GOVERNANCE]`), so always pair it with at least one usable matcher. For label-less task sources (local task-list / MEMORY.md "Next Up"), only `title:` matchers can match.
 
 ## Skill Policy Example

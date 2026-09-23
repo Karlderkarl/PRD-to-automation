@@ -1,6 +1,6 @@
 # Governance → Script Extraction Checklist
 
-What to pull from each governance file to parameterize `auto-develop.sh`. Work through this in `automate.md` Step 1. For anything missing, emit `[NEEDS GOVERNANCE]` (switch to govern mode) or `[USER DECISION REQUIRED]` (ask) — never guess.
+What to pull from each governance file to parameterize `auto-develop.sh`. Work through this in `automate.md` Step 1; the audit mode uses the same mapping to re-extract. For anything missing, emit `[NEEDS GOVERNANCE]` (switch to govern mode) or `[USER DECISION REQUIRED]` (ask in automate, report in audit) — never guess.
 
 ## From SOUL.md
 
@@ -14,19 +14,19 @@ What to pull from each governance file to parameterize `auto-develop.sh`. Work t
 ## From AGENTS.md
 
 - [ ] **Roles** → implementation/reviewer role slots, any governance-suggested models or CLIs for those slots, and single-vs-dual review depth. Treat governance model names as defaults to confirm later, not as auto-binding output.
-- [ ] **Git conventions** → `{{BASE_BRANCH}}`, branch pattern (`issue-<n>-<slug>`), commit format, force-push/hook policy
+- [ ] **Git conventions** → `{{BASE_BRANCH}}`, branch pattern (the AGENTS.md pattern; the template's `issue-<n>-<slug>` is only the fallback), commit format, force-push/hook policy
 - [ ] **Prohibited actions** → the hard "do NOT" lines injected into every write-capable prompt + review focus
 - [ ] **Review rules** → reviewer focus split (A vs B), what counts as a blocking finding, read-only enforcement
 - [ ] **Delivery standard** → what "done" requires (drives whether the script stops at PR or merges)
 - [ ] **Phase plan** → seed for the task source (issues or task-list)
 - [ ] **Auto-Develop Policy** (if present) → binding rules already written for the pipeline; the script must match them exactly
-- [ ] **Test Policy** (if present, usually inside *Auto-Develop Policy*) → `{{TEST_POLICY}}` plus `{{TEST_ELIGIBILITY[]}}` entries, one per line, `<type>:<pattern>=<include|except>` with type `label` / `title`. Entirely absent is the valid default (`off`). Determinism rules carry through unchanged: **`except` wins over `include`**; otherwise an `include` match is eligible; otherwise the base default is allowlist (not eligible) when include matchers are declared, denylist (eligible) when only except matchers are declared. No "ambiguous" outcome. A set policy with empty/inert eligibility is `[NEEDS GOVERNANCE]`, not a license to guess.
+- [ ] **Test Policy** (if present, usually inside *Auto-Develop Policy*) → `{{TEST_POLICY}}` plus `{{TEST_ELIGIBILITY[]}}` entries, one per line, `<type>:<pattern>=<include|except>` with type `label` / `title`. Entirely absent is the valid default (`off`). Determinism rules carry through unchanged: **`except` wins over `include`**; otherwise an `include` match is eligible; otherwise the base default is allowlist (not eligible) whenever any include matcher is declared, even a dead one, and denylist (eligible) only when every declared matcher is `except` and at least one is usable (`references/contract.md` section 5). No "ambiguous" outcome. A set policy with empty/inert eligibility is `[NEEDS GOVERNANCE]`, not a license to guess.
 - [ ] **Skill Policy** (if present) → `{{SKILL_MAP[]}}` — explicit matchers, one per line, `<type>:<pattern> = <skill>` with type `label` / `title` (the parser trims, so whitespace around `:` and `=` is optional). A `label` pattern is matched against the whole label, so multi-word labels (`good first issue`, `area: auth`) are fine; a `title` pattern is an extended regex against the task title/body. Absent = empty map (valid no-op); never invent matchers. Multiple distinct matches resolve to `(ambiguous)` at runtime, so flag any overlapping rules back as policy to tighten — do not add precedence here.
 
 ## From CLAUDE.md
 
-- [ ] **Development Commands** → `{{CHECK_CMDS[]}}` in order; flag any `# planned` (not yet runnable → bootstrap first)
-- [ ] **Targeted single-test command** → `{{TARGETED_TEST_CMD}}` with a literal `{TARGET}` token, used by the deterministic test gate and local validation. If AGENTS.md sets `TEST_POLICY=required` but this command is missing, that is `[GOVERNANCE DRIFT]` and the generated automation must degrade enforcement to `preferred`.
+- [ ] **Development Commands** → `{{CHECK_CMDS[]}}` in order; `# planned` commands are excluded (not yet runnable → bootstrap first, then govern removes the marker and automate Sync re-wires the checks)
+- [ ] **Targeted single-test command** → `{{TARGETED_TEST_CMD}}` from the line `TARGETED_TEST_CMD='<command>'`, with a literal, unquoted `{TARGET}` token (a line marked `# planned` counts as absent), used by the deterministic test gate and local validation. If AGENTS.md sets `TEST_POLICY=required` but this command is missing, that is `[GOVERNANCE DRIFT]` and the generated automation must degrade enforcement to `preferred`.
 - [ ] **Tool preferences** → which CLIs/runners the script can use (`gh`, package manager, `claude`, `codex`, CI wrapper, etc.)
 - [ ] **Roles** → confirm they match AGENTS.md; mismatch = `[GOVERNANCE DRIFT]`
 - [ ] **Environment variables** → what the script must export or require; never hardcode secret values
@@ -37,12 +37,12 @@ What to pull from each governance file to parameterize `auto-develop.sh`. Work t
 
 - [ ] **Memory file path** → `{{MEMORY_FILE}}` (usually `MEMORY.md`)
 - [ ] **Archive path** → `{{ARCHIVE_FILE}}` (usually `memory/completed-phases.md`); confirm it is not gitignored
-- [ ] **Update Rules** → encode all of:
+- [ ] **Update Rules** (together with AGENTS.md *Auto-Develop Policy*, which states M1 to M7) → encode all of:
   - review diff excludes the memory file (`git diff <base> -- . ':!MEMORY.md'`)
   - implementation/fix steps write ONE overwritten "Next Up" line
   - only the post-review memory step writes completed work, to the archive
   - no-op fix detection (hash of code diff excluding memory + logs, via `git hash-object`)
-- [ ] **Task source declaration** → GitHub Issues / task-list / Next Up (drives candidate selection)
+- [ ] **Task source declaration** → GitHub Issues / task-list / Next Up (drives candidate selection and `{{TASK_SOURCE_HAS_LABELS}}`: `true` only for GitHub Issues)
 - [ ] **Current blockers** → anything that should make the run refuse to start
 
 ## Cross-file consistency
@@ -62,7 +62,7 @@ A filled parameter set:
 
 ```
 ROLE_SLOTS, GOVERNANCE_MODEL_DEFAULTS, CONFIRMED_MODEL_SELECTIONS(+effort/+runner),
-BASE_BRANCH, TASK_SOURCE(+label/file), CHECK_CMDS[], TOOLCHAIN_SETUP, MEMORY_FILE,
+BASE_BRANCH, TASK_SOURCE(+label/file), TASK_SOURCE_HAS_LABELS, CHECK_CMDS[], TOOLCHAIN_SETUP, MEMORY_FILE,
 ARCHIVE_FILE, REFERENCE_DOCS, GOVERNANCE_REVIEW_FOCUS (8-15 bullets),
 PERMISSION_MODE/SANDBOX (user opt-in), MAX_ROUNDS, MERGE_POLICY,
 ISSUE_SEED_PLAN, DETACHED_RUN_MODE,

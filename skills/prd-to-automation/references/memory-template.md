@@ -76,6 +76,8 @@ When this file changes:
 - keep upcoming tasks short and current
 - Operational knowledge (tool usage, server admin, service configuration) belongs in a global memory outside the project if available
 - Ensure `memory/completed-phases.md` is not gitignored (use `memory/2026-*.md` pattern instead of `memory/` if daily flush files should be excluded)
+- {If automated: implement/fix/refactor steps overwrite ONE "Next Up" status line; only the pipeline's memory step writes completed work, to the archive. The full pipeline rules are in AGENTS.md *Auto-Develop Policy*.}
+- Open drift items stay in `Governance Drift` until resolved; never record them only in the archive
 ```
 
 ## Guidelines
@@ -94,7 +96,7 @@ Use the archive reference by default, even for small projects. The archive may s
 
 - `memory/completed-phases.md` — detailed issue-level entries, organized by phase
 - MEMORY.md — only current state, open decisions, next steps, infrastructure
-- Archived entries remain searchable via `memory_search` / `memory_get`
+- Archived entries stay available to agents that read the archive file when they need history
 - Use `references/completed-phases-template.md` when creating the archive for the first time
 
 When using `.gitignore` for the `memory/` directory (e.g. to exclude daily flush files), ensure the archive file is explicitly included or use a pattern like `memory/2026-*.md` instead of `memory/`.

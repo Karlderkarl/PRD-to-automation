@@ -15,7 +15,7 @@ For this mode, one project equals one folder. The project root is the folder tha
 
 Missing inputs are findings, not errors: no PRD means Part A compares governance to the repository only; no `auto-develop.sh` means Part B and Part C are skipped and reported as "no automation present". Governance that is entirely missing is `[NEEDS GOVERNANCE]` with a recommendation to switch to govern.
 
-A project whose governance came from `prd-to-governance` 1.2.0 and whose script came from `governance-to-automation` 1.2.2 shows no drift merely because the skill changed; only real mismatches are reported.
+A project whose governance came from `prd-to-governance` 1.2.0 and whose script came from `governance-to-automation` 1.2.2 shows no drift merely because the skill changed; only real mismatches are reported. A script whose header names no skill and contract version predates 1.1.0; judge it against the rules, not against the newer template text.
 
 ## Part A: Governance drift
 
@@ -28,10 +28,16 @@ Identify mismatches in four categories:
 
 Tag significant conflicts with `[GOVERNANCE DRIFT]`. Report each finding in one of three forms: "PRD says X, governance says Y", "governance says X, repository does Y", or "governance is silent on X".
 
+Report a root cause once. When several findings follow from one open user decision (typically the task source: `label:` matchers, PR workflow, and eligibility label all depend on it), report the decision as `[USER DECISION REQUIRED]` and list the dependent findings under it instead of routing each one to govern as separate drift.
+
 Good audit targets include:
 
 - role mismatches between `AGENTS.md` and `CLAUDE.md`
-- commands in `CLAUDE.md` that do not exist in `package.json` or other build files
+- commands in `CLAUDE.md` that the project's build files or toolchain do not provide, excluding commands marked `# planned` (`references/contract.md` section 6)
+- `# planned` markers that are stale because the tool now exists (the pipeline still skips those commands)
+- a `TARGETED_TEST_CMD` whose tool is not installed and that is not marked `# planned` (`references/contract.md` section 6)
+- uncertainty markers left inside binding rules (for example an *Auto-Develop Policy* line whose eligibility label is `[USER DECISION REQUIRED]`)
+- `MEMORY.md` contradicting itself (for example *Current State* naming open drift while *Governance Drift* says none, or open drift recorded only in the archive)
 - phase plans that no longer reflect repository reality
 - stack declarations in `SOUL.md` that the repo contradicts
 - `MEMORY.md` current state or next steps that are stale
@@ -49,7 +55,7 @@ Good audit targets include:
 
 ## Part B: Script drift
 
-Read the existing script, re-extract the parameters from the current governance exactly as automate Step 1 does (`references/extraction-checklist.md`), and report mismatches in six classes, tagging significant ones `[GOVERNANCE DRIFT]`:
+Read the existing script, re-extract the parameters from the current governance with the mapping in `references/extraction-checklist.md` (the one automate Step 1 uses), and report mismatches in six classes, tagging significant ones `[GOVERNANCE DRIFT]`. Where the checklist says to ask the user, report the open question instead. User choices made in automate (models, task source, merge policy) are recorded in the script and the archive entry; a difference to governance that the archive names as the user's choice is user-choice drift, not a script defect:
 
 - **Stale checks** - script runs commands that no longer exist in CLAUDE.md (or misses new ones)
 - **Role/model drift** - script roles, runners, or model selections differ from AGENTS.md/CLAUDE.md expectations
@@ -68,9 +74,13 @@ Check the script's safety and invariants as well, and report deviations as **Cri
 - privileged values (`bypassPermissions`, `danger-full-access`, an unconditional merge) appear as defaults instead of behind `--unattended` / `--auto-merge` and `confirm_privileged_mode`
 - `eval` is used on project commands or on the `{TARGET}` value, or the `{TARGET}` allowlist sanitisation is missing
 - the checkpoint commit is not gated on a non-empty code diff; failure paths use a bare `git checkout` instead of discarding work and returning to the base branch
-- critical steps (issue reads, checkout, checkpoint, amend, push, PR, reviewer/fixer/memory runners) rely on `set -e` inside `process_issue` instead of explicit guards
+- critical steps (issue or task reads, checkout, checkpoint, amend, push and PR where the variant has them, reviewer/fixer/refactor/check-fix/memory runners) rely on `set -e` inside `process_issue` (`process_task` in the task-list variant) instead of explicit guards
+- reviewers can change the working tree unnoticed, or the pipeline commits without verifying that `SOUL.md`, `AGENTS.md`, `CLAUDE.md` are unchanged (`references/contract.md` M7)
+- `{TARGET}` is substituted unquoted, a target starting with `-` or `#` is accepted, or exit status 126/127 counts as RED (`references/contract.md` section 5)
 - `FROZEN_TARGETED_TEST_TARGET`, `TARGETED_TEST_FILE`, `TEST_GATE_ACTIVE` are not reset per task
 - the refactor pass runs before the correctness checkpoint, or keeps a round whose re-review was not clean
+
+Report as **Advisory**: the implementer runs under `--permission-mode default` while the project has no tool allowlist (`.claude/settings.json` `permissions.allow` or `--allowedTools`); headless runs then change nothing.
 
 ## Part C: Validation
 
@@ -78,7 +88,7 @@ Validate the script without running the real loop:
 
 1. `bash -n auto-develop.sh` (syntax)
 2. `shellcheck auto-develop.sh`, if available; report findings honestly, including "shellcheck not installed"
-3. `./auto-develop.sh --dry-run`, if the environment allows, to confirm candidate selection works without executing models. `--dry-run` must be side-effect-free; if it mutates tracked files, that is a **Critical** finding
+3. `./auto-develop.sh --dry-run`, if the environment allows, to confirm candidate selection works without executing models; add `--max-issues N` with N above the number of open tasks so dependency blocking is exercised. `--dry-run` must be side-effect-free; if it creates, changes, or deletes any file in the working tree (tracked or untracked, outside the ignored log directory), that is a **Critical** finding
 
 Never execute the real pipeline loop as part of an audit.
 
@@ -93,7 +103,7 @@ Present one report with three parts, in this order:
 Then:
 
 - summarize the most important mismatches and every `[NEEDS PRD CLARIFICATION]`, `[NEEDS CODEBASE DISCOVERY]`, `[USER DECISION REQUIRED]`, `[GOVERNANCE DRIFT]`, and `[NEEDS GOVERNANCE]` item
-- propose the mode switch that would resolve each finding: governance-side findings go to the **govern** mode (Update/merge), script-side findings go to the **automate** mode (Sync)
+- propose the mode switch that would resolve each finding: governance-side findings go to the **govern** mode (Update/merge), script-side findings go to the **automate** mode (Sync); for user-choice drift, offer both (govern records the choice, or automate Sync reverts to the governance) and let the user pick
 - ask for explicit approval before switching; the switch itself writes nothing until the target mode has presented its proposal and the user has approved it
 
 ## Quality checklist

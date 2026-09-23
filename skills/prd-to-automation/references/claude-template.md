@@ -52,9 +52,10 @@ Claude Code is the execution environment for this repository.
 {Start, e.g., pnpm start}
 {Tests, e.g., pnpm test}
 
-# Targeted single test (TARGETED_TEST_CMD) - only if automation uses a test gate.
-# Keep the literal {TARGET} token; it is a placeholder the pipeline fills, not one you fill.
-# e.g., pytest {TARGET}   or   pnpm test -- --runTestsByPath {TARGET}
+# Targeted single test - only if automation uses a test gate. Keep the literal,
+# unquoted {TARGET} token; the pipeline fills and quotes it. Add "# planned" while
+# the tool is not installed yet.
+{e.g., TARGETED_TEST_CMD='pytest {TARGET}'   or   TARGETED_TEST_CMD='pnpm test -- --runTestsByPath {TARGET}'}
 ```
 
 ## Working Rules
@@ -62,7 +63,7 @@ Claude Code is the execution environment for this repository.
 - Read `SOUL.md` and `MEMORY.md` before substantial work.
 - {Reference doc rule, e.g., "Read the relevant section of `setup-guide.md` before implementing."}
 - Keep work inside the project root.
-- Do not modify `SOUL.md` or `AGENTS.md` unless explicitly asked.
+- Do not modify `SOUL.md`, `AGENTS.md`, or `CLAUDE.md` unless explicitly asked.
 - Update `MEMORY.md` when milestones, blockers, or key decisions change.
 
 ## Review Boundary
@@ -89,7 +90,7 @@ Optional:
 - Target ~50-80 lines. Claude Code reads this on every conversation start - keep it lean.
 - The `@SOUL.md`, `@AGENTS.md`, `@MEMORY.md` lines at the top auto-load those files into context. This is Claude Code-specific syntax.
 - Development Commands must be copy-pasteable - use actual commands, not placeholders. If the repo is not yet bootstrapped, mark inferred commands with a `# planned` comment so agents know these are not yet runnable.
-- `TARGETED_TEST_CMD` is optional and only relevant when the project uses the automate mode's test gate. Include it only when AGENTS.md declares a `TEST_POLICY` other than `off`; `TEST_POLICY=required` without it forces the pipeline to degrade to `preferred` and log `[GOVERNANCE DRIFT]`. The `{TARGET}` token must be preserved literally - the pipeline substitutes the concrete test id/path at runtime.
+- `TARGETED_TEST_CMD` is optional and only relevant when the project uses the automate mode's test gate. Include it only when AGENTS.md declares a `TEST_POLICY` other than `off`; `TEST_POLICY=required` without it forces the pipeline to degrade to `preferred` and log `[GOVERNANCE DRIFT]`. The `{TARGET}` token must be preserved literally and unquoted - the pipeline substitutes the concrete, shell-quoted test id/path at runtime. Write it as one line `TARGETED_TEST_CMD='<command>'`, marked `# planned` while its tool is not installed.
 - Environment Variables list what the app needs, not how to configure the hosting provider.
 - Current Project State should be honest and durable. Volatile facts belong in MEMORY.md *Current State*; a claim such as "no automation yet" goes stale as soon as the automate mode runs, and that mode may not edit this file.
 - The Role section should be short. Detailed behavioral rules live in AGENTS.md.

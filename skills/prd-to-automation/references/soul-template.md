@@ -85,7 +85,7 @@ Core globals:
 
 ## Guidelines
 
-- Target ~60-90 lines. This is a distillation, not a copy of the PRD.
+- Up to ~90 lines; small projects need fewer. This is a distillation, not a copy of the PRD.
 - Every item should be something an agent needs to know before writing any code.
 - Use concrete values (`#e6007a`, `AES-256-GCM`, `PostgreSQL 16`), not vague statements like "use encryption".
 - If something is truly non-negotiable, it belongs here. If it's a preference, it probably doesn't.
