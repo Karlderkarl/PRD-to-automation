@@ -1,6 +1,6 @@
 # The governance-to-pipeline contract
 
-**Contract version: 1.1.0.** Any change to this file is a contract change and is recorded as such in `CHANGELOG.md`.
+**Contract version: 1.2.0.** Any change to this file is a contract change and is recorded as such in `CHANGELOG.md`.
 
 This file defines once what the **govern** mode writes, the **automate** mode reads, and the **audit** mode checks. The mode references (`references/govern.md`, `references/automate.md`, `references/audit.md`) and the blueprints link here for the definitions; wherever a mode reference restates a rule for readability, this file is the authoritative wording. Version 1.0.0 was exactly what `prd-to-governance` 1.2.0 produced and `governance-to-automation` 1.2.2 consumed; every later change is listed under a **Contract** heading in `CHANGELOG.md`.
 
@@ -48,9 +48,9 @@ Rules that every generated pipeline must implement exactly (all **Critical**):
 - **M2 One status line**: the implement, fix, and refactor steps write exactly one "Next Up" status line to `MEMORY.md`, overwriting, never appending, after reading its Update Rules.
 - **M3 Archive ownership**: only the dedicated post-review memory step writes completed work, and it writes to `memory/completed-phases.md`, never inline. It records correctness fix rounds and accepted refactor rounds as distinct facts.
 - **M4 No-op fix detection**: if a fix cycle changes only `MEMORY.md` or logs and no real code, the remaining findings are accepted deviations and the review loop breaks.
-- **M5 Dependency blocking**: `Depends on #N` (or the task-list equivalent) hard-blocks a task until every dependency is done; blocked tasks are skipped, not failed.
+- **M5 Dependency blocking**: `Depends on #N` (or the task-list equivalent) hard-blocks a task until every dependency is done; blocked tasks are skipped, not failed. A cross-repository reference (`owner/repo#N`) is not supported and blocks the task (fail closed), never read as a local `#N`.
 - **M6 Non-empty checkpoint**: the correctness checkpoint commit requires a non-empty code diff (excluding `MEMORY.md` and logs). A memory-only run produces no commit and no PR.
-- **M7 Governance is read-only at runtime**: the running pipeline writes application code and tests, `MEMORY.md` and the archive, its own logs under the log directory, and the task source's status (a local task list's `status:` field, flipped by the script, never by a model; a GitHub issue is closed through its PR), and nothing else. Every write-capable prompt forbids editing `SOUL.md`, `AGENTS.md`, and `CLAUDE.md` and forbids committing; the pipeline owns the commit and verifies before every commit that those three files are unchanged against the base branch, failing the task otherwise. Reviewers are read-only: a review that changes the working tree fails the task.
+- **M7 Governance is read-only at runtime**: the running pipeline writes application code and tests, `MEMORY.md` and the archive, its own logs under the log directory, and the task source's status (a local task list's `status:` field, flipped by the script, never by a model; a GitHub issue is closed through its PR), and nothing else. Every write-capable prompt forbids editing `SOUL.md`, `AGENTS.md`, and `CLAUDE.md` and forbids committing; the pipeline owns the commit and verifies before every commit that those three files are unchanged against the base branch, failing the task otherwise. Reviewers are read-only, independent of `--unattended`: a `claude` reviewer runs without edit and shell tools, a `codex` reviewer with `--sandbox read-only`, and a review that changes the working tree, `MEMORY.md` included, fails the task. `--unattended` widens only the implementer.
 
 Generation-time scope is a different thing: the automate mode itself writes only `MEMORY.md` (the *Current State* line and, when drift is open, one *Governance Drift* line), one entry in `memory/completed-phases.md`, and the generated artifacts (script, task source, `.gitignore` entry, run guide), and never edits `SOUL.md`, `AGENTS.md`, or `CLAUDE.md`. The mode generates; the pipeline implements.
 
@@ -60,7 +60,7 @@ If the governance does not specify M1 to M5, automate emits `[NEEDS GOVERNANCE]`
 
 **Producer** (govern, blueprint `references/agents-template.md` *Skill Policy Example*): an optional AGENTS.md section *Skill Policy*. Each line is one explicit matcher `<type>:<pattern> = <skill-name>`:
 
-- `<type>` is `label` (matched against a whole issue or task label; multi-word labels are fine) or `title` (an extended regex tested against the task title and body).
+- `<type>` is `label` (matched against a whole issue or task label; multi-word labels are fine) or `title` (an extended regex tested against the task title, a newline, and the body; `^` therefore anchors the start of the title and `$` the end of the body).
 - Whitespace around `:` and `=` is optional. The pattern may contain `:` but never `=`.
 - Matchers must be unambiguous: if two matchers resolve to different skills for the same task, the pipeline logs `(ambiguous)` and injects nothing. Keep patterns disjoint.
 - Omitting the section is a valid no-op. Never invent matchers to fill it.
