@@ -96,8 +96,7 @@ How the script consumes it (replacing the `gh` selection in the template):
 Generate the local variant from `auto-develop-template.md` and replace these five pieces; the logic of everything else (worktree guards, `refresh_base`, review loop, refactor pass, M6/M7 checks, memory step, main loop) stays as it is. Fill `TASK_SOURCE_HAS_LABELS=false`; `{{TASK_LABEL}}` is not used. `--issue <n>` selects task `<n>`. Then remove the issue residue outside the five pieces:
 
 - drop `--auto-merge` (flag, usage line, `AUTO_MERGE`, its `confirm_privileged_mode` line): there is no PR to merge;
-- drop `CODEX_SANDBOX_MODE` and its confirm line when no sandboxed reviewer CLI is selected;
-- reword the usage text, the checkpoint commit message (`feat: implement #$issue`), and the `#$issue` / `gh` wording in logs to "task".
+- reword the usage text, the checkpoint commit message (`feat: implement #$issue`), and the `#$issue` / `gh` wording in logs to "task". The prompt builders need no rewording: with `TASK_FILE` set they say "task N" and forbid editing `status:` on their own (`prompt-builders.md`).
 
 Validate with `--dry-run` before the first commit: piece 5 then reads the working-tree copy of the task file and says so.
 
@@ -209,8 +208,8 @@ branch_awaiting_review() {  # <branch> -> 0 awaiting (AWAIT_REASON set), 1 free,
   [[ "$REFACTOR" == true ]] && refactor_summary="on (${REFACTOR_ROUNDS} round(s) applied)"
   git commit --amend -m "feat: implement task $issue - $title
 
-Automated via auto-develop.sh. Model plan: $IMPL_LABEL | $REVIEW_A_LABEL${REVIEW_B_LABEL:+, $REVIEW_B_LABEL}
-Correctness review rounds: $review_rounds/$MAX_ROUNDS (delivered A/B rounds incl. accepted refactor re-reviews: $DELIVERED_REVIEW_ROUNDS)
+Automated via auto-develop.sh. Model plan: $IMPL_LABEL | $REVIEW_PLAN
+Correctness review rounds: $review_rounds/$MAX_ROUNDS (delivered review rounds incl. accepted refactor re-reviews: $DELIVERED_REVIEW_ROUNDS)
 Refactor pass: $refactor_summary
 Task: $TASK_FILE #$issue" >/dev/null \
     || { log "ERROR: final commit --amend failed for task $issue; checkpoint kept on $branch."; return_to_base; return 1; }
