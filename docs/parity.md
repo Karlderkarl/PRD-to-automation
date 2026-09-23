@@ -4,6 +4,8 @@ Release blocker: every rule below must have a location. A rule with no location 
 
 1.0.0 additionally fixes runtime defects of the origin pipeline template and adds two template rules (CHANGELOG, *Fixed* and *Changed*); no origin rule was dropped or weakened, so every row below still holds.
 
+1.2.0 changes no row: it adds the prompt-builder blueprint, the `REVIEW_B_ENABLED` toggle, and strictly read-only reviewers (CHANGELOG 1.2.0, contract 1.2.0).
+
 1.1.0 tightens rules and fixes further defects (CHANGELOG 1.1.0, contract 1.1.0). No row lost its location. Two rows changed meaning and say so: A21 and R27 (automate additionally writes one archive entry and, when drift is open, one *Governance Drift* line; the origin already sent the detail to the archive, 1.1.0 makes the boundary say it), and A4/A26 (a user's deliberate model or task-source pick is generated as chosen and recorded as open drift for govern, instead of stopping generation).
 
 Sources: `prd-to-governance` 1.2.0 `SKILL.md` "Quality Checklist" (P1 to P15), `governance-to-automation` 1.2.2 `SKILL.md` "Quality checklist" (A1 to A26), and the Critical invariants of PRD section 4.4 (R14 to R27). Paths are relative to `skills/prd-to-automation/`, except `SECURITY.md` and `examples/`, which sit at the repository root.

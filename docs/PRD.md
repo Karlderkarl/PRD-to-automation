@@ -199,6 +199,7 @@ Phasen 3 bis 5 sind voneinander unabhängig, sobald Phase 2 steht.
 - **Entschieden am 2026-09-22 (Abweichung von R6 bis R8 und Kriterium 5):** Die in drei unabhängigen Reviews und einem Verhaltenstest nachgewiesenen Laufzeitfehler des Ursprungs-Templates und die zwei Template-Widersprüche (Rollback-Verbot gegen Pipeline-Rollback; sofort veraltete Statussätze) werden bereits in 1.0.0 behoben. Die Abweichungen stehen im CHANGELOG unter "Fixed" und "Changed"; keine Ursprungsregel entfällt (`docs/parity.md`).
 
 - **Entschieden am 2026-09-23 (Version 1.1.0, Vertrag 1.1.0):** Ein Review mit End-to-End-Test (govern, automate, audit auf einem Testprojekt) und eine statische Prüfung des Templates fanden weitere Laufzeitfehler, Widersprüche zwischen den Modus-Referenzen und zu weite Regeln im Testgate. Sie werden in 1.1.0 behoben; die Vertragsänderungen stehen im CHANGELOG unter "Contract". Der sichere Standard `--permission-mode default` bleibt; statt ihn zu ändern, bekommt jede Betriebsanleitung einen Hinweis auf die Tool-Allowlist für kopflose Läufe.
+- **Entschieden am 2026-09-23 (Version 1.2.0, Vertrag 1.2.0):** Die Prompt-Builder bekommen eine Bash-Blaupause, Single-Review wird ein Schalter (`REVIEW_B_ENABLED`) statt gelöschten Codes, und Reviewer laufen unabhängig von `--unattended` immer nur lesend.
 
 ## 7. Akzeptanzkriterien
 

@@ -49,7 +49,7 @@ The pipeline calls `claude -p`, which cannot answer permission prompts. Under th
 }
 ```
 
-or pass `--allowedTools` in the implementer's runner line. Scope the `Bash(...)` entries to the project's own check commands. `--unattended` switches to `bypassPermissions` behind a confirmation prompt; it is the explicit opt-in for fully unattended runs, not the fix for a missing allowlist. Reviewers run read-only.
+or pass `--allowedTools` in the implementer's runner line. Scope the `Bash(...)` entries to the project's own check commands. `--unattended` switches the implementer to `bypassPermissions` behind a confirmation prompt; it is the explicit opt-in for fully unattended runs, not the fix for a missing allowlist. Reviewers always run read-only, `--unattended` included.
 
 A dependent task waits until its dependency is merged into the base branch, so a batch run without `--auto-merge` processes independent tasks only.
 

@@ -19,8 +19,11 @@ itself performs no privileged operations. Of particular interest:
   auto-merge) **off by default**: safe modes are shipped, the privileged values are never hardcoded,
   and they are reached only via the `--unattended` / `--auto-merge` flags behind a runtime
   `confirm_privileged_mode` gate (prompts `[y/N]`, refuses without a TTY unless `--yes` is given).
-  Patterns that could weaken that default (hardcoding a privileged mode, bypassing the gate, or
-  letting the `tmux` re-exec auto-`--yes` without a prior foreground confirmation) are in scope.
+  `--unattended` widens only the implementer; reviewers always run read-only (a `claude` reviewer
+  without edit and shell tools, a `codex` reviewer with `--sandbox read-only`), and a review that
+  changes the working tree fails the task. Patterns that could weaken that default (hardcoding a
+  privileged mode, bypassing the gate, giving a reviewer write access, or letting the `tmux`
+  re-exec auto-`--yes` without a prior foreground confirmation) are in scope.
 - `examples/auto-develop.payload-sample.sh` is a read-only sample that mirrors the same
   safe-by-default policy and must not be run in this repo.
 - The generated targeted-test gate substitutes a **model-authored** `{TARGET}` value into a command
@@ -56,5 +59,5 @@ The latest release is supported.
 
 | Version | Supported |
 |---|---|
-| 1.1.x | ✅ |
-| 1.0.x | ❌ |
+| 1.2.x | ✅ |
+| < 1.2 | ❌ |

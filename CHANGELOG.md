@@ -9,6 +9,48 @@ heading and bump the contract version stated in that file.
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-09-23
+
+Closes the three gaps the 1.1.0 re-test left open: the prompt builders were the largest hand-written
+part of every generated script, single review meant deleting code in about nine places, and
+reviewers were read-only only by instruction.
+
+### Contract
+- `references/contract.md` is now **contract version 1.2.0**.
+- M7: reviewers are read-only independent of `--unattended` (a `claude` reviewer without edit and
+  shell tools, a `codex` reviewer with `--sandbox read-only`); a review that changes the working
+  tree, `MEMORY.md` included, fails the task. `--unattended` widens only the implementer.
+- M5: a cross-repository dependency (`owner/repo#N`) blocks the task instead of being read as the
+  local `#N`.
+- Section 4 states that a `title:` regex is tested against title, newline, and body, so `^` anchors
+  the title and `$` the end of the body (clarification, no behaviour change).
+
+### Added
+- `references/prompt-builders.md`: a bash blueprint for all seven prompt builders, inserted
+  verbatim by the generator and filled through three placeholders (`{{PROJECT_NAME}}`,
+  `{{REFERENCE_DOCS}}`, `{{GOVERNANCE_REVIEW_FOCUS}}`). Untrusted values (title, body, diff,
+  findings, check output) reach the prompt only as `printf` arguments or via `cat`, never through an
+  unquoted heredoc, so backticks or `$(...)` in a diff are written literally. The earlier prose
+  templates are replaced by a description of what each prompt must achieve; the wording lives only
+  in the blueprint.
+- `references/auto-develop-template.md`: `REVIEW_B_ENABLED` switches between single and dual
+  review. The Reviewer B code stays in the script and is skipped; `--review-b` is rejected with a
+  message while it is off.
+
+### Changed
+- `run_review` compares a hash of the whole tree (`git write-tree`, `MEMORY.md` included) before and
+  after each reviewer; before, a reviewer's edit to `MEMORY.md` went unnoticed.
+- The review prompt states one output format, and the pass rule matches it: `LGTM` alone (optionally
+  with `ADVISORY:` lines) or numbered findings, never both. A reply with `LGTM` and a numbered line
+  now fails; before, it passed when `LGTM` came first. A pass that happens to contain a line such as
+  `2024. …` now costs one fix round.
+- `check_dependencies` blocks on issue or PR URLs in a `Depends on` line; before, they read as "no
+  dependencies".
+- `references/automate.md`, `references/extraction-checklist.md`, `SKILL.md`, `README.md`,
+  `SECURITY.md`: single review is `REVIEW_B_ENABLED=false`, the builders come from the blueprint, and
+  reviewers stay read-only under `--unattended`. `references/audit.md` flags a reviewer runner with
+  write or shell access and a tamper check that ignores `MEMORY.md`.
+
 ## [1.1.0] - 2026-09-23
 
 A review with an end-to-end test (govern, then automate with a local task list, then audit, on a
@@ -263,5 +305,6 @@ section 6. No origin rule was dropped (`docs/parity.md`).
 The fixture `examples/auto-develop.payload-sample.sh` is a pre-refactor snapshot and is intentionally
 not re-synced; it still shows the origin behaviour, including the defects fixed above.
 
+[1.2.0]: https://github.com/Karlderkarl/PRD-to-automation/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Karlderkarl/PRD-to-automation/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Karlderkarl/PRD-to-automation/releases/tag/v1.0.0

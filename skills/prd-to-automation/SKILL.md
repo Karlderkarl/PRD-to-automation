@@ -3,7 +3,7 @@ name: prd-to-automation
 description: "Turn a PRD into project governance (SOUL.md, AGENTS.md, CLAUDE.md, MEMORY.md), turn that governance into a project-tailored, stack-agnostic auto-develop pipeline script, and audit both for drift. Use when bootstrapping or refreshing governance from a PRD, generating or syncing an auto-develop.sh from existing governance, or checking governance and pipeline drift, including dry-running a generated script. Do not trigger merely because a repository contains an AGENTS.md; the user must ask for governance, automation, or an audit of them."
 license: MIT
 metadata:
-  version: 1.1.0
+  version: 1.2.0
 ---
 
 # PRD to Automation
@@ -48,7 +48,7 @@ State the chosen mode in one line before doing any work. When a mode finds work 
 - **Critical**: govern writes only the four governance files and `memory/completed-phases.md`, only after the user's explicit per-file decision and approval. It never commits.
 - **Critical**: automate writes only `MEMORY.md` (the *Current State* line and, when drift is open, one *Governance Drift* line, per its update rules), one entry in `memory/completed-phases.md`, and the generated artifacts. It never edits `SOUL.md`, `AGENTS.md`, or `CLAUDE.md`. A needed correction is `[GOVERNANCE DRIFT]` and goes through govern. It never starts without all four governance files. It never runs the real pipeline loop; validation means `bash -n`, `shellcheck`, `--dry-run`.
 - **Critical**: audit writes nothing. Changes happen only after switching to govern or automate and after approval.
-- **Critical**: generated scripts keep `bypassPermissions`, `danger-full-access`, and auto-merge off by default. They are reachable only via `--unattended` / `--auto-merge` behind the runtime `confirm_privileged_mode` gate, and are never written as defaults.
+- **Critical**: generated scripts keep `bypassPermissions`, `danger-full-access`, and auto-merge off by default. They are reachable only via `--unattended` / `--auto-merge` behind the runtime `confirm_privileged_mode` gate, and are never written as defaults. `--unattended` widens only the implementer; reviewers always run read-only.
 - **Required**: stack-agnostic. The generated script assumes no toolchain. Checks come verbatim from `CLAUDE.md` into `CHECKS=()`; an empty array is a valid no-op.
 - **Required**: deterministic resolution. Skill routing and test eligibility resolve only from explicit `label:` / `title:` matchers, once per task, logged. No filesystem, registry, network, or semantic search. Never invent matchers.
 - **Required**: models are chosen explicitly by the user per pipeline step in automate, never silently inherited from governance. A pick that differs from governance is generated as chosen and recorded as open `[GOVERNANCE DRIFT]` for govern.
@@ -61,4 +61,4 @@ Every mode ends by presenting what was done or found, every decision that was no
 
 ## Backward compatibility
 
-Projects whose governance came from `prd-to-governance` 1.2.0 and whose script came from `governance-to-automation` 1.2.2 keep working unchanged. An audit reports no drift merely because the skill changed. Scripts generated since 1.1.0 carry a header comment naming the skill and contract version they were generated with; a script without it predates 1.1.0.
+Projects whose governance came from `prd-to-governance` 1.2.0 and whose script came from `governance-to-automation` 1.2.2 keep working unchanged. An audit reports no drift merely because the skill changed. Scripts generated since 1.1.0 carry a header comment naming the skill and contract version they were generated with; a script without it predates 1.1.0. Judge a script against the contract version its header names.

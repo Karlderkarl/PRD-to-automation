@@ -10,10 +10,11 @@ What to pull from each governance file to parameterize `auto-develop.sh`. Work t
 - [ ] **Security principles** → review focus (encryption, auth, validation/rate-limiting, secret handling)
 - [ ] **Compliance** → review focus if it constrains code (privacy, accessibility)
 - [ ] **Reference documents** → `{{REFERENCE_DOCS}}` the implementation/fix prompts tell agents to read
+- [ ] **Project name** → `{{PROJECT_NAME}}` for the prompt builders
 
 ## From AGENTS.md
 
-- [ ] **Roles** → implementation/reviewer role slots, any governance-suggested models or CLIs for those slots, and single-vs-dual review depth. Treat governance model names as defaults to confirm later, not as auto-binding output.
+- [ ] **Roles** → implementation/reviewer role slots, any governance-suggested models or CLIs for those slots, and single-vs-dual review depth (`{{REVIEW_B_ENABLED}}`). Treat governance model names as defaults to confirm later, not as auto-binding output.
 - [ ] **Git conventions** → `{{BASE_BRANCH}}`, branch pattern (the AGENTS.md pattern; the template's `issue-<n>-<slug>` is only the fallback), commit format, force-push/hook policy
 - [ ] **Prohibited actions** → the hard "do NOT" lines injected into every write-capable prompt + review focus
 - [ ] **Review rules** → reviewer focus split (A vs B), what counts as a blocking finding, read-only enforcement
@@ -61,7 +62,7 @@ What to pull from each governance file to parameterize `auto-develop.sh`. Work t
 A filled parameter set:
 
 ```
-ROLE_SLOTS, GOVERNANCE_MODEL_DEFAULTS, CONFIRMED_MODEL_SELECTIONS(+effort/+runner),
+PROJECT_NAME, ROLE_SLOTS, REVIEW_B_ENABLED, GOVERNANCE_MODEL_DEFAULTS, CONFIRMED_MODEL_SELECTIONS(+effort/+runner),
 BASE_BRANCH, TASK_SOURCE(+label/file), TASK_SOURCE_HAS_LABELS, CHECK_CMDS[], TOOLCHAIN_SETUP, MEMORY_FILE,
 ARCHIVE_FILE, REFERENCE_DOCS, GOVERNANCE_REVIEW_FOCUS (8-15 bullets),
 PERMISSION_MODE/SANDBOX (user opt-in), MAX_ROUNDS, MERGE_POLICY,

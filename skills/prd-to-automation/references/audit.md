@@ -75,7 +75,7 @@ Check the script's safety and invariants as well, and report deviations as **Cri
 - `eval` is used on project commands or on the `{TARGET}` value, or the `{TARGET}` allowlist sanitisation is missing
 - the checkpoint commit is not gated on a non-empty code diff; failure paths use a bare `git checkout` instead of discarding work and returning to the base branch
 - critical steps (issue or task reads, checkout, checkpoint, amend, push and PR where the variant has them, reviewer/fixer/refactor/check-fix/memory runners) rely on `set -e` inside `process_issue` (`process_task` in the task-list variant) instead of explicit guards
-- reviewers can change the working tree unnoticed, or the pipeline commits without verifying that `SOUL.md`, `AGENTS.md`, `CLAUDE.md` are unchanged (`references/contract.md` M7)
+- reviewers can change the working tree unnoticed (the before/after comparison must include `MEMORY.md`), a reviewer runner inherits `--unattended` or has edit or shell tools, or the pipeline commits without verifying that `SOUL.md`, `AGENTS.md`, `CLAUDE.md` are unchanged (`references/contract.md` M7)
 - `{TARGET}` is substituted unquoted, a target starting with `-` or `#` is accepted, or exit status 126/127 counts as RED (`references/contract.md` section 5)
 - `FROZEN_TARGETED_TEST_TARGET`, `TARGETED_TEST_FILE`, `TEST_GATE_ACTIVE` are not reset per task
 - the refactor pass runs before the correctness checkpoint, or keeps a round whose re-review was not clean
